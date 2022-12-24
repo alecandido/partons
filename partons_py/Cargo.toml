@@ -1,0 +1,21 @@
+[package]
+name = "partons_py"
+version = "0.0.1"
+authors = ["Alessandro Candido <candido.ale@gmail.com>"]
+edition = "2021"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/AleCandido/partons"
+readme = "../README.md"
+keywords = ["high-energy-physics", "physics"]
+categories = ["science"]
+description = "Partons library"
+
+[package.metadata.maturin]
+name = "partons"
+
+[lib]
+name = "partons"
+crate-type = ["cdylib"]
+
+[dependencies]
+partons = { path = "../partons", version = "0.0.1" }

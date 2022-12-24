@@ -1,0 +1,11 @@
+[package]
+name = "partons"
+version = "0.0.1"
+authors = ["Alessandro Candido <candido.ale@gmail.com>"]
+edition = "2021"
+readme = "../README.md"
+keywords = ["high-energy-physics", "physics"]
+categories = ["science"]
+description = "Partons library"
+
+[dependencies]
