@@ -1,7 +1,8 @@
 use anyhow::{anyhow, Result};
-use ndarray::{array, Array1, Array3};
+use itertools::izip;
+use ndarray::{Array1, Array3};
 
-use std::{collections::HashMap, fmt::format};
+use std::collections::HashMap;
 
 pub struct Block {
     pub pids: Array1<i32>,
@@ -17,6 +18,8 @@ impl Block {
         mugrid: Array1<f64>,
         values: Array3<f64>,
     ) -> Self {
+        assert_eq!(values.shape(), &[pids.len(), xgrid.len(), mugrid.len()]);
+
         Self {
             pids,
             xgrid,
@@ -39,10 +42,19 @@ impl Block {
             .collect()
     }
 
-    pub fn interp(&self, pids: &[i32], xs: &[f64], mus: &[f64]) -> Result<Array3<f64>> {
+    pub fn interp(&self, pids: &[i32], xs: &[f64], mus: &[f64]) -> Result<Array1<f64>> {
+        // determine interpolation slices, one per pid
         let slices = self.pids_indices(pids)?;
 
-        return Ok(array![[[0.]]]);
+        let mut values = Vec::new();
+
+        for (slice, x, mu) in izip!(slices, xs, mus) {
+            let idx = 0;
+            let idmu = 0;
+            values.push(self.values[[slice, idx, idmu]]);
+        }
+
+        return Ok(Array1::from(values));
     }
 }
 
@@ -50,18 +62,29 @@ impl Block {
 mod tests {
     use super::*;
 
+    use ndarray::array;
+
     fn block() -> Block {
         Block::new(
             array![-1, 1, 21],
-            array![0.1, 0.5, 1.],
+            array![0.01, 0.1, 0.5, 1.],
             array![10., 100.],
-            array![[[0.]]],
+            Array3::from_shape_fn((3, 4, 2), |(i, j, k)| (100 * i + 10 * j + k) as f64),
         )
     }
 
     #[test]
     fn new_test() {
-        block();
+        let b = block();
+
+        fn sumn(n: u32) -> u32 {
+            (0..n).sum()
+        }
+
+        assert_eq!(
+            b.values.sum() as u32,
+            (100 * sumn(3) * 4 * 2 + 10 * 3 * sumn(4) * 2 + 1 * 3 * 4 * sumn(2))
+        )
     }
 
     #[test]
@@ -76,6 +99,15 @@ mod tests {
 
     #[test]
     fn interp_test() {
-        ()
+        let b = block();
+
+        let values = b
+            .interp(
+                &[1, 21, 1, -1],
+                &[0.2, 0.2, 0.7, 0.7],
+                &[15., 25., 35., 45.],
+            )
+            .unwrap();
+        assert_eq!(&values.to_vec(), &[100., 200., 100., 0.])
     }
 }

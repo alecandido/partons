@@ -12,5 +12,6 @@ description = "Partons library"
 [dependencies]
 anyhow = "1.0"
 directories = "4.0"
+itertools = "0.10.5"
 ndarray = "0.15"
 thiserror = "1.0"
