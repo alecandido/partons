@@ -14,4 +14,6 @@ anyhow = "1.0"
 directories = "4.0"
 itertools = "0.10.5"
 ndarray = "0.15"
+serde = { version = "1.0.151", features = ["derive"] }
 thiserror = "1.0"
+toml = "0.5.10"

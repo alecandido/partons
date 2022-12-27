@@ -48,7 +48,7 @@ impl Block {
 
         let mut values = Vec::new();
 
-        for (slice, x, mu) in izip!(slices, xs, mus) {
+        for (slice, _x, _mu) in izip!(slices, xs, mus) {
             let idx = 0;
             let idmu = 0;
             values.push(self.values[[slice, idx, idmu]]);
