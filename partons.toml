@@ -1,3 +1,4 @@
 [[sources]]
 name = "lhapdf"
-url = "lhapdfsets.web.cern.ch/lhapdfsets/current/"
+url = "https://lhapdfsets.web.cern.ch/lhapdfsets/current/"
+index = "https://lhapdfsets.web.cern.ch/lhapdfsets/current/pdfsets.index"

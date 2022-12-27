@@ -1,3 +1,5 @@
+use super::remote::Source;
+
 use anyhow::{bail, Result};
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
@@ -10,14 +12,8 @@ use std::str;
 const NAME: &str = "partons.toml";
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Source {
-    name: String,
-    url: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct Configs {
-    sources: Vec<Source>,
+    pub sources: Vec<Source>,
 }
 
 impl Configs {
@@ -68,10 +64,12 @@ mod tests {
 [[sources]]
 name = "pdfrepo"
 url = "https://example.com/pdfs/"
+index = "https://example.com/pdfs/pdfsets.index"
 
 [[sources]]
 name = "otherpdfrepo"
 url = "https://example.com/others/pdfs/"
+url = "https://example.com/others/pdfs.csv"
         "#;
 
         let loaded: Configs =
