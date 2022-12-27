@@ -74,7 +74,8 @@ name = "otherpdfrepo"
 url = "https://example.com/others/pdfs/"
         "#;
 
-        let loaded: Configs = toml::from_str(cfg).unwrap();
+        let loaded: Configs =
+            toml::from_str(cfg).expect("Problem loading example TOML dump of configs.");
 
         assert_eq!(loaded.sources[0].url, "https://example.com/pdfs/");
         assert_eq!(

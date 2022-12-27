@@ -92,7 +92,8 @@ mod tests {
         let b = block();
 
         assert_eq!(
-            b.pids_indices(&[1, 21, -1, 21, 21]).unwrap(),
+            b.pids_indices(&[1, 21, -1, 21, 21])
+                .expect("Not all PIDs have been found in the example block."),
             vec![1, 2, 0, 2, 2]
         );
     }
@@ -107,7 +108,7 @@ mod tests {
                 &[0.2, 0.2, 0.7, 0.7],
                 &[15., 25., 35., 45.],
             )
-            .unwrap();
+            .expect("Error during interpolation.");
         assert_eq!(&values.to_vec(), &[100., 200., 100., 0.])
     }
 }
