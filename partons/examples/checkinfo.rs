@@ -1,15 +1,15 @@
 use anyhow::Result;
 use partons::{
-    configs::{self, Configs},
+    configs::{self, data_path, Configs},
     remote::Source,
     set::SetHeader,
 };
 use tokio::task::JoinSet;
 
-use std::fs;
+use std::{fs, path::PathBuf};
 
-async fn fetch(header: SetHeader, source: Source) -> (String, String) {
-    let info = header.fetch_info(&source).await;
+async fn fetch(header: SetHeader, source: Source, cache: PathBuf) -> (String, String) {
+    let info = header.fetch_info(&source, Some(cache.as_path())).await;
     // println!("{:#?}", info);
     let err = match info {
         Ok(_) => "".to_owned(),
@@ -28,16 +28,18 @@ async fn main() -> Result<()> {
     println!("{:#?}", cfg);
 
     let source = &cfg.sources[0];
-    let index = source.fetch_index().await?;
+    let cache = data_path()?;
+    let index = source.fetch_index(Some(cache.as_path())).await?;
 
     let mut set = JoinSet::new();
     for header in index.into_iter() {
         let source = source.clone();
-        set.spawn(async move { fetch(header, source).await });
+        let cache = cache.clone();
+        set.spawn(async move { fetch(header, source, cache).await });
     }
 
     while let Some(res) = set.join_next().await {
-        println!("{:#?}", res.unwrap());
+        // println!("{:#?}", res.unwrap());
     }
 
     Ok(())

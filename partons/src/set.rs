@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -21,10 +23,10 @@ impl SetHeader {
         &self.name
     }
 
-    pub async fn fetch_info(&self, source: &Source) -> Result<Info> {
+    pub async fn fetch_info(&self, source: &Source, cache: Option<&Path>) -> Result<Info> {
         let pattern = source.patterns.info.clone();
         source
-            .fetch_info(&pattern.replace(NAME_PLACEHOLDER, &self.name))
+            .fetch_info(&pattern.replace(NAME_PLACEHOLDER, &self.name), cache)
             .await
     }
 }

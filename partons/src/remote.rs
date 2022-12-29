@@ -142,11 +142,11 @@ impl Source {
             .map_err(|_| anyhow!("Failed to parse index"))
     }
 
-    pub async fn fetch_info(&self, path: &str) -> Result<Info> {
+    pub async fn fetch_info(&self, path: &str, cache: Option<&Path>) -> Result<Info> {
         let url = format!("{endpoint}{path}", endpoint = self.url);
-        let content = reqwest::get(&url).await?.text().await?;
+        let content = self.fetch(&url, Path::new(&path), cache).await?;
 
-        serde_yaml::from_str(&content)
+        serde_yaml::from_slice(&content)
             .map_err(|e| anyhow!("Failed to parse info file for '{}':\n\t{:?}", path, e))
     }
 }
