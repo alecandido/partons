@@ -50,8 +50,12 @@ impl Configs {
     }
 }
 
-pub fn data_path() -> PathBuf {
-    return PathBuf::from("/tmp/foo/bar.txt");
+pub fn data_path() -> Result<PathBuf> {
+    if let Some(proj_dirs) = ProjectDirs::from("", "", "Partons") {
+        return Ok(proj_dirs.data_dir().to_owned());
+    }
+
+    bail!("Data path not found.")
 }
 
 #[cfg(test)]

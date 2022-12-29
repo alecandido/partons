@@ -1,18 +1,29 @@
-use std::ops::{self, Deref};
-use std::str::FromStr;
-use std::vec;
+use crate::info::Info;
+use crate::set::SetHeader;
 
 use anyhow::{anyhow, Result};
+use bytes::Bytes;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-use crate::info::Info;
-use crate::set::SetHeader;
+use std::ops::{self, Deref};
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
+use std::{fs, vec};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Patterns {
     pub(crate) info: String,
-    pub(crate) tarball: String,
+    pub(crate) grids: String,
+}
+
+impl Default for Patterns {
+    fn default() -> Self {
+        Patterns {
+            info: "{name}/info.yaml".to_owned(),
+            grids: "{name}.lz4".to_owned(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -20,6 +31,7 @@ pub struct Source {
     name: String,
     url: String,
     index: String,
+    #[serde(default)]
     pub(crate) patterns: Patterns,
 }
 
@@ -82,10 +94,50 @@ impl IntoIterator for Index {
 }
 
 impl Source {
-    pub async fn fetch_index(&self) -> Result<Index> {
-        let content = reqwest::get(&self.index).await?.text().await?;
+    pub fn in_cache(&self, path: &Path, cache: Option<&Path>) -> Result<PathBuf> {
+        let mut buf = cache.ok_or(anyhow!("Cache not present"))?.to_owned();
+        buf.push(&self.name);
+        buf.push(path);
 
-        content
+        Ok(buf)
+    }
+
+    pub async fn fetch(&self, url: &str, path: &Path, cache: Option<&Path>) -> Result<Bytes> {
+        // TODO: turn prints in logs
+        let location = self.in_cache(path, cache).ok();
+
+        // let content = if let Some(ref locpath) = location && locpath.exists() {
+        let content = if location.is_some() && location.clone().unwrap().exists() {
+            let content = fs::read(&location.unwrap())?.into();
+            println!("'{url}' loaded from cache");
+            content
+        } else {
+            let content = reqwest::get(url).await?.bytes().await?;
+            println!("{:#?}", location);
+            if let Some(ref locpath) = location {
+                // TODO: move old to trash bin -> upgrade cache to struct
+                fs::create_dir_all(
+                    locpath
+                        .parent()
+                        .ok_or(anyhow!("Fail to access parent for '{locpath:?}'"))?,
+                )?;
+                fs::write(locpath, &content)?;
+            } else {
+                println!("'{url}' downloaded, but not cached")
+            }
+
+            content
+        };
+
+        Ok(content)
+    }
+
+    pub async fn fetch_index(&self, cache: Option<&Path>) -> Result<Index> {
+        let content = self
+            .fetch(&self.index, Path::new("index.csv"), cache)
+            .await?;
+
+        std::str::from_utf8(&content)?
             .parse::<Index>()
             .map_err(|_| anyhow!("Failed to parse index"))
     }

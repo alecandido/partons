@@ -2,4 +2,4 @@
 name = "lhapdf"
 url = "https://lhapdfsets.web.cern.ch/lhapdfsets/current/"
 index = "https://lhapdfsets.web.cern.ch/lhapdfsets/current/pdfsets.index"
-patterns = { info = "{name}/{name}.info", tarball = "{name}.tar.gz" }
+patterns = { info = "{name}/{name}.info", grids = "{name}.tar.gz" }

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 // This should be i32, but unfortunately it is not honored by all sets:
@@ -70,4 +72,6 @@ pub struct Info {
     alpha_s_lambda5: Option<f64>,
     #[serde(default, rename = "Extrapolator")]
     extrapolator: Option<String>, // TODO: replace with enum
+    #[serde(default)]
+    _more: HashMap<String, String>,
 }
