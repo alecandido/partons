@@ -15,7 +15,7 @@ async fn main() -> Result<()> {
     let source = &cfg.sources[0];
     let cache = data_path();
     let index = source
-        .fetch_index(cache.ok().as_ref().map(|p| p.as_path()))
+        .fetch_index(cache.as_ref().ok().map(|p| p.as_path()))
         .await?;
 
     println!("{:#?}", index[0]);
