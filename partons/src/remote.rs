@@ -1,5 +1,4 @@
-use crate::info::Info;
-use crate::set::SetHeader;
+use crate::set::Header;
 
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
@@ -37,14 +36,14 @@ pub struct Source {
 
 // Create a struct to be able to implement FromStr, with a type alias it would be impossible
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Index {
-    pub sets: Vec<SetHeader>,
+pub struct Index<'index> {
+    pub sets: Vec<Header<'index>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseIndexError;
 
-impl FromStr for Index {
+impl<'index> FromStr for Index<'index> {
     type Err = ParseIndexError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -55,7 +54,7 @@ impl FromStr for Index {
                 .next_tuple()
                 .ok_or(ParseIndexError)?;
 
-            index.sets.push(SetHeader::new(
+            index.sets.push(Header::new(
                 id.parse().map_err(|_| ParseIndexError)?,
                 name.to_owned(),
                 number.parse().map_err(|_| ParseIndexError)?,
@@ -67,8 +66,8 @@ impl FromStr for Index {
 }
 
 // Index underlying vector
-impl ops::Index<usize> for Index {
-    type Output = SetHeader;
+impl<'index> ops::Index<usize> for Index<'index> {
+    type Output = Header<'index>;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.sets[index]
@@ -76,16 +75,16 @@ impl ops::Index<usize> for Index {
 }
 
 // Iterate underlying vector
-impl Deref for Index {
-    type Target = [SetHeader];
+impl<'index> Deref for Index<'index> {
+    type Target = [Header<'index>];
 
     fn deref(&self) -> &Self::Target {
         self.sets.deref()
     }
 }
 
-impl IntoIterator for Index {
-    type Item = SetHeader;
+impl<'index> IntoIterator for Index<'index> {
+    type Item = Header<'index>;
     type IntoIter = vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -94,6 +93,10 @@ impl IntoIterator for Index {
 }
 
 impl Source {
+    pub fn url(&self, path: &str) -> String {
+        format!("{endpoint}{path}", endpoint = self.url).to_owned()
+    }
+
     pub fn in_cache(&self, path: &Path, cache: Option<&Path>) -> Result<PathBuf> {
         let mut buf = cache.ok_or(anyhow!("Cache not present"))?.to_owned();
         buf.push(&self.name);
@@ -102,51 +105,42 @@ impl Source {
         Ok(buf)
     }
 
-    pub async fn fetch(&self, url: &str, path: &Path, cache: Option<&Path>) -> Result<Bytes> {
+    pub async fn fetch(&self, url: &str, path: &Path, cache: Option<&Path>) -> Result<PathBuf> {
         // TODO: turn prints in logs
-        let location = self.in_cache(path, cache).ok();
+        let location = self.in_cache(path, cache)?;
 
-        // let content = if let Some(ref locpath) = location && locpath.exists() {
-        let content = if location.is_some() && location.clone().unwrap().exists() {
-            let content = fs::read(&location.unwrap())?.into();
-            println!("'{url}' loaded from cache");
-            content
-        } else {
+        if !location.exists() {
             let content = reqwest::get(url).await?.bytes().await?;
             println!("{:#?}", location);
-            if let Some(ref locpath) = location {
-                // TODO: move old to trash bin -> upgrade cache to struct
-                fs::create_dir_all(
-                    locpath
-                        .parent()
-                        .ok_or(anyhow!("Fail to access parent for '{locpath:?}'"))?,
-                )?;
-                fs::write(locpath, &content)?;
-            } else {
-                println!("'{url}' downloaded, but not cached")
-            }
+            // TODO: move old to trash bin -> upgrade cache to struct
+            fs::create_dir_all(
+                location
+                    .parent()
+                    .ok_or(anyhow!("Fail to access parent for '{location:?}'"))?,
+            )?;
 
-            content
+            // Here in principle it would be possible to directly return content, without reloading
+            // it from disk. However, this would uselessly complicate the workflow, since this
+            // function would be in charge of loading as well, and the content should be
+            // propagated.
+            // Anyhow: if the content has been remotely fetched and dumped, reading it is not the
+            // most expensive operation.
+            fs::write(&location, &content)?;
+        } else {
+            println!("'{url}' loaded from cache");
         };
 
-        Ok(content)
+        Ok(location)
     }
 
-    pub async fn fetch_index(&self, cache: Option<&Path>) -> Result<Index> {
-        let content = self
+    pub async fn index(&self, cache: Option<&Path>) -> Result<Index> {
+        let location = self
             .fetch(&self.index, Path::new("index.csv"), cache)
             .await?;
+        let content: Bytes = fs::read(&location)?.into();
 
         std::str::from_utf8(&content)?
             .parse::<Index>()
             .map_err(|_| anyhow!("Failed to parse index"))
-    }
-
-    pub async fn fetch_info(&self, path: &str, cache: Option<&Path>) -> Result<Info> {
-        let url = format!("{endpoint}{path}", endpoint = self.url);
-        let content = self.fetch(&url, Path::new(&path), cache).await?;
-
-        serde_yaml::from_slice(&content)
-            .map_err(|e| anyhow!("Failed to parse info file for '{}':\n\t{:?}", path, e))
     }
 }
