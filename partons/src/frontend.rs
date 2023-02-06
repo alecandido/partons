@@ -1,8 +1,16 @@
-use super::noop;
+use super::noop::{Pdf as NoopPdf, PdfSet as NoopPdfSet};
 use cfg_if::cfg_if;
 use enum_dispatch::enum_dispatch;
 use std::result;
 use thiserror::Error;
+
+cfg_if! {
+    if #[cfg(feature = "lhapdf")] {
+        use super::lhapdf::{Pdf as LhapdfPdf, PdfSet as LhapdfPdfSet};
+    } else {
+        use super::fake_lhapdf::{Pdf as LhapdfPdf, PdfSet as LhapdfPdfSet};
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -20,21 +28,11 @@ pub struct PdfUncertainty {
     pub neg: f64,
 }
 
-cfg_if! {
-    if #[cfg(feature = "lhapdf")] {
-        type LhapdfPdf = super::lhapdf::Pdf;
-        type LhapdfPdfSet = super::lhapdf::PdfSet;
-    } else {
-        type LhapdfPdf = super::fake_lhapdf::Pdf;
-        type LhapdfPdfSet = super::fake_lhapdf::PdfSet;
-    }
-}
-
 #[derive(Debug)]
 #[enum_dispatch]
 #[non_exhaustive]
 pub enum PdfEnum {
-    Noop(super::noop::Pdf),
+    Noop(NoopPdf),
     Lhapdf(LhapdfPdf),
 }
 
@@ -66,7 +64,7 @@ impl PdfEnum {
 #[enum_dispatch]
 #[non_exhaustive]
 pub enum PdfSetEnum {
-    Noop(noop::PdfSet),
+    Noop(NoopPdfSet),
     Lhapdf(LhapdfPdfSet),
 }
 
