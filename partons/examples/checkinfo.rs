@@ -1,12 +1,8 @@
 use anyhow::Result;
-use partons::{
-    configs::{self, data_path, Configs},
-    remote::Source,
-    //set::SetHeader,
-};
-use tokio::task::JoinSet;
+use partons::configs::{self, /*data_path,*/ Configs};
+//use tokio::task::JoinSet;
 
-use std::{fs, path::PathBuf};
+use std::fs;
 
 //async fn fetch(header: SetHeader, source: Source, cache: PathBuf) -> (String, String) {
 //    let info = header.fetch_info(&source, Some(cache.as_path())).await;
@@ -27,8 +23,8 @@ async fn main() -> Result<()> {
 
     println!("{:#?}", cfg);
 
-    let source = &cfg.sources[0];
-    let cache = data_path()?;
+    //let source = &cfg.sources[0];
+    //let cache = data_path()?;
     //let index = source.fetch_index(Some(cache.as_path())).await?;
 
     //let mut set = JoinSet::new();

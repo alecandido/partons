@@ -60,7 +60,7 @@ pub fn data_path() -> Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     //    #[test]
     //    fn serialize_test() {
