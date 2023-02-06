@@ -1,4 +1,5 @@
-use cxx::{let_cxx_string, Exception, UniquePtr};
+use anyhow::anyhow;
+use cxx::{let_cxx_string, UniquePtr};
 use std::convert::TryFrom;
 use std::fmt::{self, Formatter};
 use std::result;
@@ -83,16 +84,16 @@ mod ffi {
 
 /// Error struct that wraps all exceptions thrown by the LHAPDF library.
 #[derive(Debug, Error)]
-#[error(transparent)]
-pub struct LhapdfError {
-    exc: Exception,
+pub enum Error {
+    #[error(transparent)]
+    Backend(#[from] anyhow::Error),
 }
 
 /// CL percentage for a Gaussian 1-sigma.
 pub const CL_1_SIGMA: f64 = 68.268_949_213_708_58;
 
 /// Type definition for results with an [`LhapdfError`].
-pub type Result<T> = result::Result<T, LhapdfError>;
+pub type Result<T> = result::Result<T, Error>;
 
 pub use ffi::PdfUncertainty;
 
@@ -145,7 +146,7 @@ impl Pdf {
     pub fn with_lhaid(lhaid: i32) -> Result<Self> {
         ffi::pdf_with_lhaid(lhaid)
             .map(|ptr| Self { ptr })
-            .map_err(|exc| LhapdfError { exc })
+            .map_err(|exc| Error::Backend(anyhow!(exc)))
     }
 
     /// Constructor. Create a new PDF with the given PDF `setname` and `member` ID.
@@ -157,7 +158,7 @@ impl Pdf {
         let_cxx_string!(cxx_setname = setname.to_string());
         ffi::pdf_with_setname_and_member(&cxx_setname, member)
             .map(|ptr| Self { ptr })
-            .map_err(|exc| LhapdfError { exc })
+            .map_err(|exc| Error::Backend(anyhow!(exc)))
     }
 
     /// Create a new PDF with the given PDF set name and member ID as a single string.
@@ -175,7 +176,7 @@ impl Pdf {
         let_cxx_string!(cxx_setname = setname_nmem.to_string());
         ffi::pdf_with_setname_and_nmem(&cxx_setname)
             .map(|ptr| Self { ptr })
-            .map_err(|exc| LhapdfError { exc })
+            .map_err(|exc| Error::Backend(anyhow!(exc)))
     }
 
     /// Get the PDF `x * f(x)` value at `x` and `q2` for the given PDG ID.
@@ -270,7 +271,7 @@ impl PdfSet {
 
         ffi::pdfset_new(&cxx_setname)
             .map(|ptr| Self { ptr })
-            .map_err(|exc| LhapdfError { exc })
+            .map_err(|exc| Error::Backend(anyhow!(exc)))
     }
 
     /// Retrieve a metadata string by key name.
@@ -304,7 +305,7 @@ impl PdfSet {
             .map(|member| {
                 ffi::pdf_with_set_and_member(&self.ptr, member)
                     .map(|ptr| Pdf { ptr })
-                    .map_err(|exc| LhapdfError { exc })
+                    .map_err(|exc| Error::Backend(anyhow!(exc)))
             })
             .collect()
     }
@@ -343,7 +344,8 @@ impl PdfSet {
         cl: f64,
         alternative: bool,
     ) -> Result<PdfUncertainty> {
-        ffi::pdf_uncertainty(&self.ptr, values, cl, alternative).map_err(|exc| LhapdfError { exc })
+        ffi::pdf_uncertainty(&self.ptr, values, cl, alternative)
+            .map_err(|exc| Error::Backend(anyhow!(exc)))
     }
 }
 
