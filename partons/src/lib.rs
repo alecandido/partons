@@ -6,5 +6,8 @@ pub mod remote;
 pub mod set;
 
 mod frontend;
+#[cfg(feature = "lhapdf")]
+mod lhapdf;
+mod noop;
 
 pub use frontend::*;

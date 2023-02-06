@@ -5,7 +5,7 @@ fn main() {
         .probe("lhapdf")
         .unwrap();
 
-    let mut build = cxx_build::bridge("src/frontend.rs");
+    let mut build = cxx_build::bridge("src/lhapdf.rs");
 
     for include_path in lhapdf.include_paths {
         build.include(include_path);
@@ -23,17 +23,9 @@ fn main() {
         println!("cargo:rustc-link-lib=static={lib}");
     }
 
-    println!("cargo:rerun-if-changed=src/lib.rs");
+    println!("cargo:rerun-if-changed=src/lhapdf.rs");
     println!("cargo:rerun-if-changed=include/wrappers.hpp");
 }
 
 #[cfg(not(feature = "lhapdf"))]
-fn main() {
-    cxx_build::bridge("src/frontend.rs")
-        .define("FAKE_WRAPPERS", "1")
-        .compile("lhapdf-rust-cxx-bridge");
-
-    println!("cargo:rerun-if-changed=src/frontend.rs");
-    println!("cargo:rerun-if-changed=include/fake-lhapdf.hpp");
-    println!("cargo:rerun-if-changed=include/wrappers.hpp");
-}
+fn main() {}
