@@ -9,7 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  #RUSTFLAGS: '-Cinstrument-coverage'
+  RUSTFLAGS: '-Cinstrument-coverage'
 
 jobs:
   build:
@@ -61,21 +61,20 @@ jobs:
         # from https://stackoverflow.com/a/51141872/812178
         sed -i 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' stderr
 
-    #- name: Generate code coverage
-    #  run: |
-    #    find . -name '*.profraw' -exec $(rustc --print target-libdir)/../bin/llvm-profdata merge -sparse -o my.profdata {} +
-    #    sed -nE 's/  Running( unittests|) [^[:space:]]+ \(([^)]+)\)/\2/p' stderr | \
-    #        xargs printf ' --object %s' | \
-    #        xargs $(rustc --print target-libdir)/../bin/llvm-cov export \
-    #            --ignore-filename-regex='/.cargo/registry' \
-    #            --ignore-filename-regex='rustc' \
-    #            --instr-profile=my.profdata \
-    #            --skip-functions \
-    #            --object target/debug/partons \
-    #            --format lcov > lcov.info
+    - name: Generate code coverage
+      run: |
+        find . -name '*.profraw' -exec $(rustc --print target-libdir)/../bin/llvm-profdata merge -sparse -o my.profdata {} +
+        sed -nE 's/  Running( unittests|) [^[:space:]]+ \(([^)]+)\)/\2/p' stderr | \
+            xargs printf ' --object %s' | \
+            xargs $(rustc --print target-libdir)/../bin/llvm-cov export \
+                --ignore-filename-regex='/.cargo/registry' \
+                --ignore-filename-regex='rustc' \
+                --instr-profile=my.profdata \
+                --skip-functions \
+                --format lcov > lcov.info
 
-    #- name: Upload to codecov.io
-    #  uses: codecov/codecov-action@v3
-    #  with:
-    #    token: ${{secrets.CODECOV_TOKEN}}
-    #    flags: rust
+    - name: Upload to codecov.io
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        flags: rust
