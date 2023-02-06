@@ -5,8 +5,8 @@ pub mod member;
 pub mod remote;
 pub mod set;
 
+mod fake_lhapdf;
 mod frontend;
-#[cfg(feature = "lhapdf")]
 mod lhapdf;
 mod noop;
 

@@ -1,3 +1,4 @@
+use super::noop;
 use cfg_if::cfg_if;
 use enum_dispatch::enum_dispatch;
 use std::result;
@@ -24,8 +25,8 @@ cfg_if! {
         type LhapdfPdf = super::lhapdf::Pdf;
         type LhapdfPdfSet = super::lhapdf::PdfSet;
     } else {
-        type LhapdfPdf = super::noop::Pdf;
-        type LhapdfPdfSet = super::noop::PdfSet;
+        type LhapdfPdf = super::fake_lhapdf::Pdf;
+        type LhapdfPdfSet = super::fake_lhapdf::PdfSet;
     }
 }
 
@@ -33,6 +34,7 @@ cfg_if! {
 #[enum_dispatch]
 #[non_exhaustive]
 pub enum PdfEnum {
+    Noop(super::noop::Pdf),
     Lhapdf(LhapdfPdf),
 }
 
@@ -64,6 +66,7 @@ impl PdfEnum {
 #[enum_dispatch]
 #[non_exhaustive]
 pub enum PdfSetEnum {
+    Noop(noop::PdfSet),
     Lhapdf(LhapdfPdfSet),
 }
 

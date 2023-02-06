@@ -54,6 +54,10 @@ jobs:
         toolchain: 1.65.0
         components: llvm-tools-preview
 
+    - name: Check without LHAPDF
+      run: |
+        cargo check --no-default-features
+
     - name: Run tests
       run: |
         # we need stderr, but we can't run test twice because it'll regenerate/modify the binaries which interferes with `llvm-cov`

@@ -1,3 +1,5 @@
+#![cfg(feature = "lhapdf")]
+
 use crate::{PdfEnum, PdfSet as _, PdfSetEnum};
 use anyhow::anyhow;
 use cxx::{let_cxx_string, UniquePtr};
