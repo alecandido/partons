@@ -1,3 +1,5 @@
+//! Interpolation block
+
 use anyhow::{anyhow, Result};
 use itertools::izip;
 use ndarray::{Array1, Array3};

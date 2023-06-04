@@ -31,8 +31,6 @@ pub struct Source {
     pub(crate) patterns: Patterns,
 }
 
-// Create a struct to be able to implement FromStr, with a type alias it would be impossible
-
 impl Source {
     pub fn url(&self, path: &str) -> String {
         format!("{endpoint}{path}", endpoint = self.url).to_owned()

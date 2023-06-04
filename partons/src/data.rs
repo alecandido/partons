@@ -2,4 +2,5 @@
 
 mod header;
 mod index;
-mod remote;
+mod lhapdf;
+pub(crate) mod remote;

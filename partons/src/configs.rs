@@ -1,4 +1,5 @@
-use super::remote::Source;
+//! Manage partons configurations.
+use super::data::remote::Source;
 
 use anyhow::{bail, Result};
 use directories::ProjectDirs;
@@ -12,7 +13,7 @@ use std::str;
 const NAME: &str = "partons.toml";
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Configs {
+pub(crate) struct Configs {
     pub sources: Vec<Source>,
 }
 
@@ -50,7 +51,7 @@ impl Configs {
     }
 }
 
-pub fn data_path() -> Result<PathBuf> {
+pub(crate) fn data_path() -> Result<PathBuf> {
     if let Some(proj_dirs) = ProjectDirs::from("", "", "Partons") {
         return Ok(proj_dirs.data_dir().to_owned());
     }

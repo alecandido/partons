@@ -42,7 +42,7 @@ pub trait Pdf {
 
     fn force_positive(&mut self) -> i32;
 
-    fn set(&self) -> crate::PdfSetEnum;
+    fn set(&self) -> PdfSetEnum;
 
     fn set_force_positive(&mut self, mode: i32);
 

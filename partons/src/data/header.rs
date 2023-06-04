@@ -3,7 +3,8 @@
 //! This should not be confused with the Info, giving furher information about the set, its
 //! content, and the related physics. This headers are only minimal descriptions required for
 //! transferring data.
-use crate::{info::Info, member::Grid};
+use super::lhapdf::info::Info;
+use crate::member::Grid;
 
 use std::fs;
 use std::path::{Path, PathBuf};

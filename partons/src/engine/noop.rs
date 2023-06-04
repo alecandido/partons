@@ -1,9 +1,9 @@
-use crate::{PdfEnum, PdfSetEnum, PdfUncertainty};
+use super::interface::{self, PdfEnum, PdfSetEnum, PdfUncertainty};
 
 #[derive(Debug)]
 pub struct Pdf {}
 
-impl crate::Pdf for Pdf {
+impl interface::Pdf for Pdf {
     fn alphas_q2(&self, _: f64) -> f64 {
         1.0
     }
@@ -12,7 +12,7 @@ impl crate::Pdf for Pdf {
         1
     }
 
-    fn set(&self) -> crate::PdfSetEnum {
+    fn set(&self) -> interface::PdfSetEnum {
         PdfSet {}.into()
     }
 
@@ -32,7 +32,7 @@ impl crate::Pdf for Pdf {
 }
 
 impl Pdf {
-    pub fn new(_: &str) -> crate::Result<PdfEnum> {
+    pub fn new(_: &str) -> interface::Result<PdfEnum> {
         Ok(Pdf {}.into())
     }
 }
@@ -40,7 +40,7 @@ impl Pdf {
 #[derive(Debug)]
 pub struct PdfSet {}
 
-impl crate::PdfSet for PdfSet {
+impl interface::PdfSet for PdfSet {
     fn entry(&self, _: &str) -> Option<String> {
         None
     }
@@ -49,7 +49,7 @@ impl crate::PdfSet for PdfSet {
         "".to_string()
     }
 
-    fn pdfs(&self) -> crate::Result<Vec<PdfEnum>> {
+    fn pdfs(&self) -> interface::Result<Vec<PdfEnum>> {
         Ok(vec![Pdf {}.into()])
     }
 
@@ -67,7 +67,7 @@ impl PdfSet {
         vec!["NOOP".to_string()]
     }
 
-    pub fn new(_: &str) -> crate::Result<PdfSetEnum> {
+    pub fn new(_: &str) -> interface::Result<PdfSetEnum> {
         Ok(PdfSet {}.into())
     }
 }

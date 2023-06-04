@@ -1,12 +1,12 @@
 #![cfg(not(feature = "lhapdf"))]
 
+use super::interface::{self, PdfEnum, PdfSetEnum, PdfUncertainty};
 use super::noop::{Pdf as NoopPdf, PdfSet as NoopPdfSet};
-use crate::{PdfEnum, PdfSetEnum, PdfUncertainty};
 
 #[derive(Debug)]
 pub struct Pdf(NoopPdf);
 
-impl crate::Pdf for Pdf {
+impl interface::Pdf for Pdf {
     fn alphas_q2(&self, q2: f64) -> f64 {
         self.0.alphas_q2(q2)
     }
@@ -15,7 +15,7 @@ impl crate::Pdf for Pdf {
         self.0.force_positive()
     }
 
-    fn set(&self) -> crate::PdfSetEnum {
+    fn set(&self) -> interface::PdfSetEnum {
         self.0.set()
     }
 
@@ -37,7 +37,7 @@ impl crate::Pdf for Pdf {
 }
 
 impl Pdf {
-    pub fn new(_: &str) -> crate::Result<PdfEnum> {
+    pub fn new(_: &str) -> interface::Result<PdfEnum> {
         Ok(Self(NoopPdf {}).into())
     }
 }
@@ -45,7 +45,7 @@ impl Pdf {
 #[derive(Debug)]
 pub struct PdfSet(NoopPdfSet);
 
-impl crate::PdfSet for PdfSet {
+impl interface::PdfSet for PdfSet {
     fn entry(&self, key: &str) -> Option<String> {
         self.0.entry(key)
     }
@@ -54,7 +54,7 @@ impl crate::PdfSet for PdfSet {
         self.0.error_type()
     }
 
-    fn pdfs(&self) -> crate::Result<Vec<PdfEnum>> {
+    fn pdfs(&self) -> interface::Result<Vec<PdfEnum>> {
         self.0.pdfs()
     }
 
@@ -68,7 +68,7 @@ impl PdfSet {
         NoopPdfSet::available()
     }
 
-    pub fn new(setname: &str) -> crate::Result<PdfSetEnum> {
+    pub fn new(setname: &str) -> interface::Result<PdfSetEnum> {
         NoopPdfSet::new(setname)
     }
 }
