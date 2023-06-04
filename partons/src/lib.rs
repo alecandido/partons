@@ -14,7 +14,7 @@
 //! ```
 //! - `Set` is a collection of homogeneous objects
 //! - `Member` the element of the collection
-//! - `Block is the interpolation atom, essentially an N-dimensional array to be interpolated
+//! - `Block` is the interpolation atom, essentially an N-dimensional array to be interpolated
 //! - `Quantity` further interpolated quantities (e.g. `\alpha_s`)
 //! - `Info` additional metadata
 //!

@@ -1,4 +1,9 @@
 //! Manage partons configurations.
+//!
+//! Example for LHAPDF source:
+//! ```
+#![doc = include_str!("../../partons.toml")]
+//! ```
 use super::data::remote::Source;
 
 use anyhow::{bail, Result};
