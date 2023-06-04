@@ -1,3 +1,10 @@
+//! Set files metadata
+//!
+//! This should not be confused with the Info, giving furher information about the set, its
+//! content, and the related physics. This headers are only minimal descriptions required for
+//! transferring data.
+use crate::{info::Info, member::Grid};
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -5,47 +12,22 @@ use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    info::Info,
-    member::Grid,
-    remote::{Patterns, Source},
-};
-
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Header<'head> {
+pub struct Header {
     id: u32,
     name: String,
     number: u32,
-    #[serde(skip)]
-    source: Option<&'head Source>,
 }
 
 const NAME_PLACEHOLDER: &str = "{name}";
 
-impl<'head> Header<'head> {
+impl Header {
     pub fn new(id: u32, name: String, number: u32) -> Self {
-        Self {
-            id,
-            name,
-            number,
-            source: None,
-        }
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
+        Self { id, name, number }
     }
 
     pub fn identifier(&self) -> String {
-        format!("{}:'{}'", self.name, self.id)
-    }
-
-    pub fn source(&self) -> Result<&Source> {
-        self.source.ok_or(anyhow!(""))
-    }
-
-    pub fn patterns(&self) -> Result<&Patterns> {
-        Ok(&self.source()?.patterns)
+        format!("{}:{}", self.name, self.id)
     }
 
     pub async fn load(&self, remote: &Path, local: &Path, cache: Option<&Path>) -> Result<Bytes> {
