@@ -1,4 +1,7 @@
+use super::header::{self, Header};
 use super::index::Index;
+use super::lhapdf::info::Info;
+use crate::member::Grid;
 
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
@@ -8,7 +11,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Patterns {
+pub(crate) struct Patterns {
     pub(crate) info: String,
     pub(crate) grids: String,
 }
@@ -23,7 +26,7 @@ impl Default for Patterns {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Source {
+pub(crate) struct Source {
     name: String,
     url: String,
     index: String,
@@ -32,11 +35,11 @@ pub struct Source {
 }
 
 impl Source {
-    pub fn url(&self, path: &str) -> String {
+    fn url(&self, path: &str) -> String {
         format!("{endpoint}{path}", endpoint = self.url).to_owned()
     }
 
-    pub fn in_cache(&self, path: &Path, cache: Option<&Path>) -> Result<PathBuf> {
+    fn in_cache(&self, path: &Path, cache: Option<&Path>) -> Result<PathBuf> {
         let mut buf = cache.ok_or(anyhow!("Cache not present"))?.to_owned();
         buf.push(&self.name);
         buf.push(path);
@@ -44,7 +47,7 @@ impl Source {
         Ok(buf)
     }
 
-    pub async fn fetch(&self, url: &str, path: &Path, cache: Option<&Path>) -> Result<PathBuf> {
+    async fn fetch(&self, url: &str, path: &Path, cache: Option<&Path>) -> Result<PathBuf> {
         // TODO: turn prints in logs
         let location = self.in_cache(path, cache)?;
 
@@ -72,7 +75,7 @@ impl Source {
         Ok(location)
     }
 
-    pub async fn index(&self, cache: Option<&Path>) -> Result<Index> {
+    async fn index(&self, cache: Option<&Path>) -> Result<Index> {
         let location = self
             .fetch(&self.index, Path::new("index.csv"), cache)
             .await?;
@@ -81,5 +84,57 @@ impl Source {
         std::str::from_utf8(&content)?
             .parse::<Index>()
             .map_err(|_| anyhow!("Failed to parse index"))
+    }
+
+    async fn load(
+        &self,
+        remote: &Path,
+        header: &Header,
+        local: &Path,
+        cache: Option<&Path>,
+    ) -> Result<Bytes> {
+        let url = self.url(
+            remote
+                .to_str()
+                .ok_or(anyhow!("Invalid remote path in {}", header.identifier()))?,
+        );
+        let location = self.fetch(&url, local, cache).await?;
+
+        Ok(fs::read(&location)?.into())
+    }
+
+    async fn info(&self, header: &Header, cache: Option<&Path>) -> Result<Info> {
+        let pattern = &self.patterns.info;
+        let path = PathBuf::from(pattern.replace(header::NAME_PLACEHOLDER, &self.name));
+        let content = self
+            .load(path.as_path(), header, path.as_path(), cache)
+            .await?;
+
+        serde_yaml::from_slice(&content).map_err(|err| {
+            anyhow!(
+                "Failed to parse info file for {}:\n\t{:?}",
+                header.identifier(),
+                err
+            )
+        })
+    }
+
+    async fn grid(&self, member: u32, header: &Header, cache: Option<&Path>) -> Result<Grid> {
+        let pattern = &self.patterns.grids;
+        let remote = PathBuf::from(pattern.replace(header::NAME_PLACEHOLDER, &self.name));
+        let mut local = PathBuf::from(&self.name);
+        local.push(format!("{}.member.lz4", member));
+
+        let content = self
+            .load(local.as_path(), header, remote.as_path(), cache)
+            .await?;
+
+        serde_yaml::from_slice(&content).map_err(|err| {
+            anyhow!(
+                "Failed to parse grid file for {}:\n\t{:?}",
+                header.identifier(),
+                err
+            )
+        })
     }
 }

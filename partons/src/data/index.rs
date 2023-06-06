@@ -11,8 +11,8 @@ use std::vec;
 
 /// Describe content of a remote source.
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Index {
-    pub sets: Vec<Header>,
+pub(crate) struct Index {
+    sets: Vec<Header>,
 }
 
 #[derive(Debug, PartialEq, Eq)]

@@ -1,10 +1,10 @@
 //! Manage partons configurations.
 //!
 //! Example for LHAPDF source:
-//! ```
+//! ```text
 #![doc = include_str!("../../partons.toml")]
 //! ```
-use super::data::remote::Source;
+use super::data::source::Source;
 
 use anyhow::{bail, Result};
 use directories::ProjectDirs;
@@ -18,8 +18,8 @@ use std::str;
 const NAME: &str = "partons.toml";
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct Configs {
-    pub sources: Vec<Source>,
+pub struct Configs {
+    sources: Vec<Source>,
 }
 
 impl Configs {
@@ -54,45 +54,45 @@ impl Configs {
 
         bail!("No configuration file found.")
     }
-}
 
-pub(crate) fn data_path() -> Result<PathBuf> {
-    if let Some(proj_dirs) = ProjectDirs::from("", "", "Partons") {
-        return Ok(proj_dirs.data_dir().to_owned());
+    pub fn data_path() -> Result<PathBuf> {
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "Partons") {
+            return Ok(proj_dirs.data_dir().to_owned());
+        }
+
+        bail!("Data path not found.")
     }
-
-    bail!("Data path not found.")
 }
 
 #[cfg(test)]
 mod tests {
-    //use super::*;
+    use super::*;
 
-    //    #[test]
-    //    fn serialize_test() {
-    //        let cfg = r#"
-    //[[sources]]
-    //name = "pdfrepo"
-    //url = "https://example.com/pdfs/"
-    //index = "https://example.com/pdfs/pdfsets.index"
-    //
-    //[[sources]]
-    //name = "otherpdfrepo"
-    //url = "https://example.com/others/pdfs/"
-    //url = "https://example.com/others/pdfs.csv"
-    //        "#;
-    //
-    //        let loaded: Configs =
-    //            toml::from_str(cfg).expect("Problem loading example TOML dump of configs.");
-    //
-    //        //assert_eq!(loaded.sources[0].url, "https://example.com/pdfs/");
-    //        //assert_eq!(
-    //        //    loaded
-    //        //        .sources
-    //        //        .iter()
-    //        //        .map(|s| &s.name)
-    //        //        .collect::<Vec<&String>>(),
-    //        //    ["pdfrepo", "otherpdfrepo"]
-    //        //);
-    //    }
+    #[test]
+    fn serialize_test() {
+        //        let cfg = r#"
+        //[[sources]]
+        //name = "pdfrepo"
+        //url = "https://example.com/pdfs/"
+        //index = "https://example.com/pdfs/pdfsets.index"
+        //
+        //[[sources]]
+        //name = "otherpdfrepo"
+        //url = "https://example.com/others/pdfs/"
+        //url = "https://example.com/others/pdfs.csv"
+        //        "#;
+        //
+        //        let loaded: Configs =
+        //            toml::from_str(cfg).expect("Problem loading example TOML dump of configs.");
+        //
+        //        //assert_eq!(loaded.sources[0].url, "https://example.com/pdfs/");
+        //        //assert_eq!(
+        //        //    loaded
+        //        //        .sources
+        //        //        .iter()
+        //        //        .map(|s| &s.name)
+        //        //        .collect::<Vec<&String>>(),
+        //        //    ["pdfrepo", "otherpdfrepo"]
+        //        //);
+    }
 }
