@@ -26,7 +26,7 @@ impl Default for Patterns {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct Source {
+pub struct Source {
     name: String,
     url: String,
     index: String,
@@ -75,7 +75,7 @@ impl Source {
         Ok(location)
     }
 
-    async fn index(&self, cache: Option<&Path>) -> Result<Index> {
+    pub async fn index(&self, cache: Option<&Path>) -> Result<Index> {
         let location = self
             .fetch(&self.index, Path::new("index.csv"), cache)
             .await?;

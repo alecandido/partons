@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct Header {
+pub struct Header {
     id: u32,
     name: String,
     number: u32,

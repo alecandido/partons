@@ -1,24 +1,23 @@
+// Load configs and download index file
 use anyhow::Result;
-use partons::configs::{self, data_path, Configs};
-
-use std::fs;
+use partons::configs::Configs;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let path = configs::Configs::path()?;
-    let content = fs::read_to_string(path).unwrap();
+    let cfg = Configs::load()?;
 
-    let cfg = toml::from_str::<Configs>(&content).unwrap();
-
+    // display the configs content
     println!("{:#?}", cfg);
 
-    let source = &cfg.sources[0];
-    let cache = data_path();
+    let source = &cfg.sources()[0];
     let index = source
-        .index(cache.as_ref().ok().map(|p| p.as_path()))
+        .index(cfg.data_path().as_ref().ok().map(|p| p.as_path()))
         .await?;
 
-    println!("{:#?}", index[0]);
+    // display the first element, if non-empty
+    if index.len() > 0 {
+        println!("{:#?}", index[0]);
+    }
 
     Ok(())
 }
