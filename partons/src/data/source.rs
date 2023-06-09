@@ -76,7 +76,7 @@ impl Source {
         // TODO: turn prints in logs
         let content = if let Some(cache) = self.cache.as_ref() {
             let location = cache.locate(path)?;
-            println!("{:#?}", location);
+            println!("location: {location:?}");
 
             if !location.exists() {
                 let content = Self::download(url).await?;
@@ -85,7 +85,7 @@ impl Source {
                 fs::create_dir_all(
                     location
                         .parent()
-                        .ok_or(anyhow!("Fail to access parent for '{location:?}'"))?,
+                        .ok_or(anyhow!("Fail to access parent of '{location:?}'"))?,
                 )?;
 
                 fs::write(&location, &content)?;
@@ -125,9 +125,9 @@ impl Source {
         self.fetch(&url, local).await
     }
 
-    async fn info(&self, header: &Header) -> Result<Info> {
+    pub async fn info(&self, header: &Header) -> Result<Info> {
         let pattern = &self.patterns.info;
-        let path = PathBuf::from(pattern.replace(header::NAME_PLACEHOLDER, &self.name));
+        let path = PathBuf::from(pattern.replace(header::NAME_PLACEHOLDER, &header.name));
         let content = self.load(path.as_path(), header, path.as_path()).await?;
 
         serde_yaml::from_slice(&content).map_err(|err| {

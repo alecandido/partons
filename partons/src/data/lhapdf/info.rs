@@ -9,7 +9,7 @@ pub type PID = String;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Info {
     #[serde(rename = "SetDesc")]
-    set_desc: String,
+    pub set_desc: String,
     #[serde(rename = "SetIndex")]
     set_index: u32,
     #[serde(rename = "Authors")]
