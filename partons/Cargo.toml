@@ -12,8 +12,6 @@ repository.workspace = true
 rust-version.workspace = true
 version.workspace = true
 
-autoexamples = false
-
 [dependencies]
 anyhow = "1.0"
 bytes = { version = "1.3.0", features = ["serde"] }
