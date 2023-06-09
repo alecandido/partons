@@ -28,6 +28,21 @@ pub struct Configs {
 
 impl Configs {
     /// Loads configs from `path`.
+    ///
+    /// ```
+    /// use partons::configs::Configs;
+    /// use anyhow::Result;
+    /// use std::env;
+    ///
+    /// fn main() -> Result<()> {
+    ///     let mut path = env::current_dir()?;
+    ///     path.push("../partons.toml");
+    ///     let configs = Configs::new(path)?;
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// To load an automatically detected configuration file use [`Configs::load`].
     pub fn new(path: PathBuf) -> Result<Self> {
         let content = fs::read_to_string(path)?;
         let cfg = toml::from_str::<Self>(&content)?;
@@ -105,7 +120,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn serialize_test() {
+    fn deserialization() {
+        // Just test that is able to deserialize the structure
+
         let cfg = r#"
         [[sources]]
         name = "pdfrepo"
@@ -116,7 +133,7 @@ mod tests {
         name = "otherpdfrepo"
         url = "https://example.com/others/pdfs/"
         index = "https://example.com/others/pdfs.csv"
-               "#;
+        "#;
 
         let loaded: Configs =
             toml::from_str(cfg).expect("Problem loading example TOML dump of configs.");
