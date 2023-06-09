@@ -5,11 +5,11 @@
 //! transferring data.
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Header {
-    id: u32,
-    name: String,
-    number: u32,
+    pub(crate) id: u32,
+    pub(crate) name: String,
+    pub(crate) number: u32,
 }
 
 pub(crate) const NAME_PLACEHOLDER: &str = "{name}";

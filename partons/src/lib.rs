@@ -1,4 +1,4 @@
-//! Deliver partons data to the user.
+//! Ship partons distributions to the user.
 //!
 //! The overall structure is divided in two different hierarchies: the runtime library and the data
 //! management.

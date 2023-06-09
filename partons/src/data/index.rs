@@ -1,8 +1,9 @@
 //! Remote index
 use super::header::Header;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use itertools::Itertools;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use std::ops::{self, Deref};
@@ -64,5 +65,22 @@ impl IntoIterator for Index {
 
     fn into_iter(self) -> Self::IntoIter {
         self.sets.into_iter()
+    }
+}
+
+impl Index {
+    pub fn get(&self, name: &str) -> Result<Header> {
+        let full_match = "^".to_owned() + name + "$";
+        let re = Regex::new(&full_match)?;
+        let found: Vec<_> = self
+            .sets
+            .iter()
+            .filter(|header| re.is_match(&header.name))
+            .collect();
+        match found.len() {
+            0 => bail!("No set matching {name}."),
+            1 => Ok(found[0].to_owned()),
+            n => bail!("{n} sets found matching {name}"),
+        }
     }
 }
