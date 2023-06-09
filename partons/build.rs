@@ -5,7 +5,7 @@ fn main() {
         .probe("lhapdf")
         .unwrap();
 
-    let mut build = cxx_build::bridge("src/lhapdf.rs");
+    let mut build = cxx_build::bridge("src/engine/lhapdf.rs");
 
     for include_path in lhapdf.include_paths {
         build.include(include_path);
@@ -23,7 +23,7 @@ fn main() {
         println!("cargo:rustc-link-lib=static={lib}");
     }
 
-    println!("cargo:rerun-if-changed=src/lhapdf.rs");
+    println!("cargo:rerun-if-changed=src/engine/lhapdf.rs");
     println!("cargo:rerun-if-changed=include/wrappers.hpp");
 }
 
