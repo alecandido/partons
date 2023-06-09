@@ -3,7 +3,7 @@
 
 #include <LHAPDF/LHAPDF.h>
 
-#include <partons/src/lhapdf.rs.h>
+#include <partons/src/engine/lhapdf.rs.h>
 #include <rust/cxx.h>
 
 #include <cstdint>
