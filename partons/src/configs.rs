@@ -23,7 +23,8 @@ pub const NAME: &str = "partons.toml";
 /// User configurations are directly deserialized from files in this structure.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Configs {
-    sources: Vec<Source>,
+    /// List of configured sources.
+    pub sources: Vec<Source>,
 }
 
 impl Configs {
@@ -108,11 +109,6 @@ impl Configs {
 
         bail!("Data path not found.")
     }
-
-    /// Return configured sources.
-    pub fn sources(&self) -> &Vec<Source> {
-        &self.sources
-    }
 }
 
 #[cfg(test)]
@@ -138,6 +134,6 @@ mod tests {
         let loaded: Configs =
             toml::from_str(cfg).expect("Problem loading example TOML dump of configs.");
 
-        assert_eq!(loaded.sources().len(), 2);
+        assert_eq!(loaded.sources.len(), 2);
     }
 }

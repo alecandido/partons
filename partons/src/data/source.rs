@@ -1,3 +1,4 @@
+use super::cache::Cache;
 use super::header::{self, Header};
 use super::index::Index;
 use super::lhapdf::info::Info;
@@ -25,6 +26,8 @@ impl Default for Patterns {
     }
 }
 
+const INDEX_NAME: &str = "index.csv";
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Source {
     name: String,
@@ -32,6 +35,8 @@ pub struct Source {
     index: String,
     #[serde(default)]
     pub(crate) patterns: Patterns,
+    #[serde(skip)]
+    cache: Option<Cache>,
 }
 
 impl Source {
@@ -39,17 +44,17 @@ impl Source {
         format!("{endpoint}{path}", endpoint = self.url).to_owned()
     }
 
-    fn in_cache(&self, path: &Path, cache: Option<&Path>) -> Result<PathBuf> {
-        let mut buf = cache.ok_or(anyhow!("Cache not present"))?.to_owned();
-        buf.push(&self.name);
-        buf.push(path);
-
-        Ok(buf)
+    pub fn register_cache(&mut self, data_path: PathBuf) {
+        self.cache = Some(Cache::new(&self.name, data_path));
     }
 
-    async fn fetch(&self, url: &str, path: &Path, cache: Option<&Path>) -> Result<PathBuf> {
+    async fn fetch(&self, url: &str, path: &Path) -> Result<PathBuf> {
         // TODO: turn prints in logs
-        let location = self.in_cache(path, cache)?;
+        let location = self
+            .cache
+            .as_ref()
+            .ok_or(anyhow!("Cache not present"))?
+            .locate(path)?;
 
         if !location.exists() {
             let content = reqwest::get(url).await?.bytes().await?;
@@ -75,10 +80,8 @@ impl Source {
         Ok(location)
     }
 
-    pub async fn index(&self, cache: Option<&Path>) -> Result<Index> {
-        let location = self
-            .fetch(&self.index, Path::new("index.csv"), cache)
-            .await?;
+    pub async fn index(&self) -> Result<Index> {
+        let location = self.fetch(&self.index, Path::new(INDEX_NAME)).await?;
         let content: Bytes = fs::read(&location)?.into();
 
         std::str::from_utf8(&content)?
@@ -86,29 +89,21 @@ impl Source {
             .map_err(|_| anyhow!("Failed to parse index"))
     }
 
-    async fn load(
-        &self,
-        remote: &Path,
-        header: &Header,
-        local: &Path,
-        cache: Option<&Path>,
-    ) -> Result<Bytes> {
+    async fn load(&self, remote: &Path, header: &Header, local: &Path) -> Result<Bytes> {
         let url = self.url(
             remote
                 .to_str()
                 .ok_or(anyhow!("Invalid remote path in {}", header.identifier()))?,
         );
-        let location = self.fetch(&url, local, cache).await?;
+        let location = self.fetch(&url, local).await?;
 
         Ok(fs::read(&location)?.into())
     }
 
-    async fn info(&self, header: &Header, cache: Option<&Path>) -> Result<Info> {
+    async fn info(&self, header: &Header) -> Result<Info> {
         let pattern = &self.patterns.info;
         let path = PathBuf::from(pattern.replace(header::NAME_PLACEHOLDER, &self.name));
-        let content = self
-            .load(path.as_path(), header, path.as_path(), cache)
-            .await?;
+        let content = self.load(path.as_path(), header, path.as_path()).await?;
 
         serde_yaml::from_slice(&content).map_err(|err| {
             anyhow!(
@@ -125,9 +120,7 @@ impl Source {
         let mut local = PathBuf::from(&self.name);
         local.push(format!("{}.member.lz4", member));
 
-        let content = self
-            .load(local.as_path(), header, remote.as_path(), cache)
-            .await?;
+        let content = self.load(local.as_path(), header, remote.as_path()).await?;
 
         serde_yaml::from_slice(&content).map_err(|err| {
             anyhow!(

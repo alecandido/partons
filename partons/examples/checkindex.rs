@@ -9,10 +9,9 @@ async fn main() -> Result<()> {
     // display the configs content
     println!("{:#?}", cfg);
 
-    let source = &cfg.sources()[0];
-    let index = source
-        .index(cfg.data_path().as_ref().ok().map(|p| p.as_path()))
-        .await?;
+    let mut source = cfg.sources[0].clone();
+    source.register_cache(cfg.data_path()?);
+    let index = source.index().await?;
 
     // display the first element, if non-empty
     if index.len() > 0 {
