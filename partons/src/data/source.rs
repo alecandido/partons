@@ -1,3 +1,4 @@
+/// Interact with a remote source.
 use super::cache::Cache;
 use super::header::{self, Header};
 use super::index::Index;
@@ -40,53 +41,79 @@ pub struct Source {
 }
 
 impl Source {
-    fn url(&self, path: &str) -> String {
-        format!("{endpoint}{path}", endpoint = self.url).to_owned()
-    }
-
+    /// Register cache location.
+    ///
+    /// `data_path` is the path to the general `partons` data folder.
+    ///
+    /// ```
+    /// # use partons::configs::Configs;
+    /// # use partons::data::source::Source;
+    /// # use anyhow::Result;
+    /// # use std::env;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// #     let mut path = env::current_dir()?;
+    /// #     path.push("../partons.toml");
+    ///       let configs = Configs::new(path)?;
+    ///       let mut source: Source = configs.sources[0].clone();
+    ///       source.register_cache(configs.data_path()?);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    ///
+    /// See [`Configs`](crate::configs::Configs) to learn how to load them, and in particular
+    /// [`Configs::new`](crate::configs::Configs::new).
     pub fn register_cache(&mut self, data_path: PathBuf) {
         self.cache = Some(Cache::new(&self.name, data_path));
     }
 
-    async fn fetch(&self, url: &str, path: &Path) -> Result<PathBuf> {
+    // Download whatever remote resources to raw bytes
+    async fn download(url: &str) -> Result<Bytes> {
+        Ok(reqwest::get(url).await?.bytes().await?)
+    }
+
+    async fn fetch(&self, url: &str, path: &Path) -> Result<Bytes> {
         // TODO: turn prints in logs
-        let location = self
-            .cache
-            .as_ref()
-            .ok_or(anyhow!("Cache not present"))?
-            .locate(path)?;
-
-        if !location.exists() {
-            let content = reqwest::get(url).await?.bytes().await?;
+        let content = if let Some(cache) = self.cache.as_ref() {
+            let location = cache.locate(path)?;
             println!("{:#?}", location);
-            // TODO: move old to trash bin -> upgrade cache to struct
-            fs::create_dir_all(
-                location
-                    .parent()
-                    .ok_or(anyhow!("Fail to access parent for '{location:?}'"))?,
-            )?;
 
-            // Here, in principle, it would be possible to directly return content, without
-            // reloading it from disk. However, this would uselessly complicate the workflow, since
-            // this function would be in charge of loading as well, and the content should be
-            // propagated.
-            // Anyhow: if the content has been remotely fetched and dumped, reading it is not the
-            // most expensive operation.
-            fs::write(&location, &content)?;
+            if !location.exists() {
+                let content = Self::download(url).await?;
+
+                // TODO: move old to trash bin -> upgrade cache to struct
+                fs::create_dir_all(
+                    location
+                        .parent()
+                        .ok_or(anyhow!("Fail to access parent for '{location:?}'"))?,
+                )?;
+
+                fs::write(&location, &content)?;
+                println!("'{url}' cached");
+
+                content
+            } else {
+                let content: Bytes = fs::read(&location)?.into();
+                println!("'{url}' loaded from cache");
+                content
+            }
         } else {
-            println!("'{url}' loaded from cache");
+            Self::download(url).await?
         };
 
-        Ok(location)
+        Ok(content)
     }
 
     pub async fn index(&self) -> Result<Index> {
-        let location = self.fetch(&self.index, Path::new(INDEX_NAME)).await?;
-        let content: Bytes = fs::read(&location)?.into();
+        let content = self.fetch(&self.index, Path::new(INDEX_NAME)).await?;
 
         std::str::from_utf8(&content)?
             .parse::<Index>()
             .map_err(|_| anyhow!("Failed to parse index"))
+    }
+
+    fn url(&self, path: &str) -> String {
+        format!("{endpoint}{path}", endpoint = self.url).to_owned()
     }
 
     async fn load(&self, remote: &Path, header: &Header, local: &Path) -> Result<Bytes> {
@@ -95,9 +122,7 @@ impl Source {
                 .to_str()
                 .ok_or(anyhow!("Invalid remote path in {}", header.identifier()))?,
         );
-        let location = self.fetch(&url, local).await?;
-
-        Ok(fs::read(&location)?.into())
+        self.fetch(&url, local).await
     }
 
     async fn info(&self, header: &Header) -> Result<Info> {

@@ -34,5 +34,5 @@ pub mod configs;
 mod member;
 mod set;
 
-mod data;
+pub mod data;
 mod engine;
