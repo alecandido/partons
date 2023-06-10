@@ -1,4 +1,4 @@
-/// Interact with a remote source.
+//! Interact with a remote source.
 use super::cache::{Cache, Resource};
 use super::header::Header;
 use super::index::Index;
@@ -7,14 +7,14 @@ use crate::member::Member;
 
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 const NAME_PLACEHOLDER: &str = "{name}";
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 pub(crate) struct Patterns {
     pub(crate) info: String,
     pub(crate) grids: String,
@@ -24,7 +24,7 @@ impl Default for Patterns {
     fn default() -> Self {
         Patterns {
             info: "{name}/info.yaml".to_owned(),
-            grids: "{name}.lz4".to_owned(),
+            grids: "{name}.partons.lz4".to_owned(),
         }
     }
 }
@@ -33,7 +33,7 @@ impl Default for Patterns {
 ///
 /// It contains the information to connect to a remote data source, and the methods to fetch and
 /// load the content.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Source {
     name: String,
     url: String,

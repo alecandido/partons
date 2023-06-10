@@ -22,6 +22,7 @@ impl Info {
         })
     }
 
+    /// Unstructured description
     pub fn description(&self) -> String {
         self.lhapdf.set_desc.clone()
     }

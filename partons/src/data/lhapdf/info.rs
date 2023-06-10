@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub type PID = String;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Info {
+pub(crate) struct Info {
     #[serde(rename = "SetDesc")]
     pub set_desc: String,
     #[serde(rename = "SetIndex")]

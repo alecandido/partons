@@ -1,11 +1,12 @@
 //! Interpolation block
+use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
 use itertools::izip;
 use ndarray::{Array1, Array3};
+use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
-
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Block {
     pub pids: Array1<i32>,
     pub xgrid: Array1<f64>,
