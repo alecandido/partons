@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     for set in ["NNPDF40_nnlo_as_01180", "MSHT20nnlo_as118", "CT18NNLO"] {
         println!("");
         let header = index.get(set)?;
-        source.grid(&header, 0).await?;
+        source.member(&header, 0).await?;
     }
 
     Ok(())

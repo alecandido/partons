@@ -2,8 +2,8 @@
 use super::cache::{Cache, Resource};
 use super::header::Header;
 use super::index::Index;
-use crate::member::Grid;
 use crate::info::Info;
+use crate::member::Member;
 
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
@@ -186,7 +186,26 @@ impl Source {
         })
     }
 
-    pub async fn grid(&self, header: &Header, member: u32) -> Result<Grid> {
+    /// Fetch set member.
+    ///
+    /// ```
+    /// # use partons::configs::Configs;
+    /// # use partons::member::Member;
+    /// # use anyhow::Result;
+    /// # use std::env;
+    /// #
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// #     let mut path = env::current_dir()?;
+    /// #     path.push("../partons.toml");
+    ///       let configs = Configs::new(path)?;
+    ///       let index = configs.sources[0].index().await?;
+    ///       let entry = index.get("NNPDF40_nnlo_as_01180")?;
+    ///       let member: Member = configs.sources[0].member(&entry, 0).await?;
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub async fn member(&self, header: &Header, member: u32) -> Result<Member> {
         let remote = Self::replace_name(&self.patterns.grids, &header.name);
 
         let content = self
@@ -196,7 +215,7 @@ impl Source {
             )
             .await?;
 
-        serde_yaml::from_slice(&content).map_err(|err| {
+        Member::load(content).map_err(|err| {
             anyhow!(
                 "Failed to parse grid file for {}:\n\t{:?}",
                 header.identifier(),

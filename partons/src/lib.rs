@@ -35,7 +35,7 @@
 mod block;
 pub mod configs;
 pub mod info;
-mod member;
+pub mod member;
 mod quantity;
 mod set;
 
