@@ -1,15 +1,33 @@
-use std::collections::HashMap;
+use crate::data::source::ConversionError::{self, FieldType, MissingField};
+use crate::info;
 
 use serde::{Deserialize, Serialize};
+use serde_yaml::Value;
+
+use std::collections::HashMap;
+
+pub type Info = HashMap<String, Value>;
+
+impl TryFrom<Info> for info::Info {
+    type Error = ConversionError;
+
+    fn try_from(value: Info) -> Result<Self, Self::Error> {
+        // TODO: make this a macro
+        let Value::String(description) =
+            value.get("SetDesc").ok_or(MissingField("description".to_owned()))?.clone()
+            else { return Err(FieldType("description".to_owned())); };
+        Ok(info::Info { description })
+    }
+}
 
 // This should be i32, but unfortunately it is not honored by all sets:
 // https://lhapdfsets.web.cern.ch/current/JAM20-SIDIS_FF_hadron_nlo/JAM20-SIDIS_FF_hadron_nlo.info
 pub type PID = String;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct Info {
+pub(crate) struct DetailedInfo {
     #[serde(rename = "SetDesc")]
-    pub set_desc: String,
+    set_desc: String,
     #[serde(rename = "SetIndex")]
     set_index: u32,
     #[serde(rename = "Authors")]

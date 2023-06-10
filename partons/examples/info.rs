@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     for set in ["NNPDF40_nnlo_as_01180", "MSHT20nnlo_as118", "CT18NNLO"] {
         println!("");
         let header = index.get(set)?;
-        let desc = source.info(&header).await?.description();
+        let desc = source.info(&header).await?.description;
         println!("\n\t{desc}");
     }
 

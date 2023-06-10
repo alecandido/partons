@@ -17,8 +17,8 @@ async fn main() -> Result<()> {
     }
 
     while let Some(res) = set.join_next().await {
-        let desc = res??.description();
-        println!("\n\t{desc}");
+        let desc = res??.description;
+        println!("\n\t{desc:#?}");
     }
 
     eprintln!("Completed");

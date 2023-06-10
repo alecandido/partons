@@ -8,6 +8,7 @@ use crate::member::Member;
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use serde::Deserialize;
+use thiserror::Error;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -27,6 +28,17 @@ impl Default for Patterns {
             grids: "{name}.partons.lz4".to_owned(),
         }
     }
+}
+
+/// Error during data conversion
+#[derive(Error, Debug)]
+pub enum ConversionError {
+    /// Missing field from original value
+    #[error("Missing field {0}")]
+    MissingField(String),
+    /// Type mismatched
+    #[error("Missing field {0}")]
+    FieldType(String),
 }
 
 /// A remote registry.

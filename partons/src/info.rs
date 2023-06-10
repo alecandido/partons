@@ -1,7 +1,5 @@
 //! Store metadata of a set
 
-use crate::data::lhapdf;
-
 use anyhow::Result;
 use bytes::Bytes;
 use serde::{
@@ -12,19 +10,13 @@ use serde::{
 /// Set metadata
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Info {
-    lhapdf: lhapdf::info::Info,
+    /// Unstructured description
+    pub description: String,
 }
 
 impl Info {
     pub(crate) fn load(bytes: Bytes) -> Result<Self> {
-        Ok(Self {
-            lhapdf: serde_yaml::from_slice(&bytes)?,
-        })
-    }
-
-    /// Unstructured description
-    pub fn description(&self) -> String {
-        self.lhapdf.set_desc.clone()
+        Ok(serde_yaml::from_slice(&bytes)?)
     }
 }
 
