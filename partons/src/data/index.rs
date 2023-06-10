@@ -16,6 +16,7 @@ pub struct Index {
     sets: Vec<Header>,
 }
 
+/// Error during parsing of index file
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseIndexError;
 
@@ -69,6 +70,9 @@ impl IntoIterator for Index {
 }
 
 impl Index {
+    /// Retrieve set header from name or pattern.
+    ///
+    /// Regular expressions are supported through [`regex`].
     pub fn get(&self, name: &str) -> Result<Header> {
         let full_match = "^".to_owned() + name + "$";
         let re = Regex::new(&full_match)?;
