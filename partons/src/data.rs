@@ -2,6 +2,6 @@
 
 mod cache;
 mod header;
-mod index;
+pub mod index;
 mod lhapdf;
 pub mod source;

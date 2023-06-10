@@ -16,4 +16,9 @@
     - if absent, download
 - parse LHAPDF grids
 - define new data structure
-- deduplicate YAML during conversion
+- de-duplicate/fix YAML during conversion
+
+
+# Later on
+- make a dummy registry to run all tests without an internet connection
+  - the easiest way is to store a pre-filled cache, that intercepts all requests to the remote

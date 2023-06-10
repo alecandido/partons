@@ -1,0 +1,1 @@
+//! A generic interpolated quantity

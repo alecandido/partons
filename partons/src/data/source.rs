@@ -29,6 +29,10 @@ impl Default for Patterns {
     }
 }
 
+/// A remote registry.
+///
+/// It contains the information to connect to a remote data source, and the methods to fetch and
+/// load the content.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Source {
     name: String,
@@ -104,6 +108,25 @@ impl Source {
         Ok(content)
     }
 
+    /// Fetch the source index.
+    ///
+    /// The index contains the information about the sets available in the remote.
+    ///
+    /// ```
+    /// # use partons::configs::Configs;
+    /// # use partons::data::index::Index;
+    /// # use anyhow::Result;
+    /// # use std::env;
+    /// #
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// #     let mut path = env::current_dir()?;
+    /// #     path.push("../partons.toml");
+    ///       let configs = Configs::new(path)?;
+    ///       let index: Index = configs.sources[0].index().await?;
+    /// #     Ok(())
+    /// # }
+    /// ```
     pub async fn index(&self) -> Result<Index> {
         let content = self.fetch(&self.index, &Resource::Index).await?;
 
