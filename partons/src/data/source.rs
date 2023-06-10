@@ -1,6 +1,6 @@
 /// Interact with a remote source.
-use super::cache::Cache;
-use super::header::{self, Header};
+use super::cache::{Cache, Resource};
+use super::header::Header;
 use super::index::Index;
 use super::lhapdf::info::Info;
 use crate::member::Grid;
@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use std::fs;
 use std::path::{Path, PathBuf};
+
+const NAME_PLACEHOLDER: &str = "{name}";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct Patterns {
@@ -26,8 +28,6 @@ impl Default for Patterns {
         }
     }
 }
-
-const INDEX_NAME: &str = "index.csv";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Source {
@@ -72,10 +72,10 @@ impl Source {
         Ok(reqwest::get(url).await?.bytes().await?)
     }
 
-    async fn fetch(&self, url: &str, path: &Path) -> Result<Bytes> {
+    async fn fetch(&self, url: &str, resource: &Resource) -> Result<Bytes> {
         // TODO: turn prints in logs
         let content = if let Some(cache) = self.cache.as_ref() {
-            let location = cache.locate(path)?;
+            let location = cache.locate(resource)?;
             println!("location: {location:?}");
 
             if !location.exists() {
@@ -105,7 +105,7 @@ impl Source {
     }
 
     pub async fn index(&self) -> Result<Index> {
-        let content = self.fetch(&self.index, Path::new(INDEX_NAME)).await?;
+        let content = self.fetch(&self.index, &Resource::Index).await?;
 
         std::str::from_utf8(&content)?
             .parse::<Index>()
@@ -116,19 +116,24 @@ impl Source {
         format!("{endpoint}{path}", endpoint = self.url).to_owned()
     }
 
-    async fn load(&self, remote: &Path, header: &Header, local: &Path) -> Result<Bytes> {
+    async fn load(&self, remote: &Path, resource: &Resource) -> Result<Bytes> {
         let url = self.url(
             remote
                 .to_str()
-                .ok_or(anyhow!("Invalid remote path in {}", header.identifier()))?,
+                .ok_or(anyhow!("Invalid remote path {remote:?}"))?,
         );
-        self.fetch(&url, local).await
+        self.fetch(&url, resource).await
+    }
+
+    fn replace_name(pattern: &str, name: &str) -> PathBuf {
+        PathBuf::from(pattern.replace(NAME_PLACEHOLDER, name))
     }
 
     pub async fn info(&self, header: &Header) -> Result<Info> {
-        let pattern = &self.patterns.info;
-        let path = PathBuf::from(pattern.replace(header::NAME_PLACEHOLDER, &header.name));
-        let content = self.load(path.as_path(), header, path.as_path()).await?;
+        let remote = Self::replace_name(&self.patterns.info, &header.name);
+        let content = self
+            .load(remote.as_path(), &Resource::Info(header.name.to_owned()))
+            .await?;
 
         serde_yaml::from_slice(&content).map_err(|err| {
             anyhow!(
@@ -139,13 +144,15 @@ impl Source {
         })
     }
 
-    async fn grid(&self, member: u32, header: &Header, cache: Option<&Path>) -> Result<Grid> {
-        let pattern = &self.patterns.grids;
-        let remote = PathBuf::from(pattern.replace(header::NAME_PLACEHOLDER, &self.name));
-        let mut local = PathBuf::from(&self.name);
-        local.push(format!("{}.member.lz4", member));
+    pub async fn grid(&self, header: &Header, member: u32) -> Result<Grid> {
+        let remote = Self::replace_name(&self.patterns.grids, &header.name);
 
-        let content = self.load(local.as_path(), header, remote.as_path()).await?;
+        let content = self
+            .load(
+                remote.as_path(),
+                &Resource::Grid(header.name.to_owned(), member),
+            )
+            .await?;
 
         serde_yaml::from_slice(&content).map_err(|err| {
             anyhow!(

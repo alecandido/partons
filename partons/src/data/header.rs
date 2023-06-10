@@ -12,8 +12,6 @@ pub struct Header {
     pub(crate) number: u32,
 }
 
-pub(crate) const NAME_PLACEHOLDER: &str = "{name}";
-
 impl Header {
     pub(crate) fn new(id: u32, name: String, number: u32) -> Self {
         Self { id, name, number }

@@ -29,6 +29,9 @@
 //! information about remote sources (but may contain further optional configurations).
 //! The alternative is to always specify the full remote locator (through the API or CLI).
 
+#![warn(clippy::all, clippy::pedantic, clippy::restriction, clippy::cargo)]
+#![warn(missing_docs)]
+
 mod block;
 pub mod configs;
 mod member;
