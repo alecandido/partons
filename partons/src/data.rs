@@ -3,5 +3,5 @@
 mod cache;
 mod header;
 pub mod index;
-mod lhapdf;
+pub(crate) mod lhapdf;
 pub mod source;

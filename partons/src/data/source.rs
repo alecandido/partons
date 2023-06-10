@@ -2,8 +2,8 @@
 use super::cache::{Cache, Resource};
 use super::header::Header;
 use super::index::Index;
-use super::lhapdf::info::Info;
 use crate::member::Grid;
+use crate::info::Info;
 
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
@@ -152,13 +152,32 @@ impl Source {
         PathBuf::from(pattern.replace(NAME_PLACEHOLDER, name))
     }
 
+    /// Fetch set metadata.
+    ///
+    /// ```
+    /// # use partons::configs::Configs;
+    /// # use partons::info::Info;
+    /// # use anyhow::Result;
+    /// # use std::env;
+    /// #
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// #     let mut path = env::current_dir()?;
+    /// #     path.push("../partons.toml");
+    ///       let configs = Configs::new(path)?;
+    ///       let index = configs.sources[0].index().await?;
+    ///       let entry = index.get("NNPDF40_nnlo_as_01180")?;
+    ///       let info: Info = configs.sources[0].info(&entry).await?;
+    /// #     Ok(())
+    /// # }
+    /// ```
     pub async fn info(&self, header: &Header) -> Result<Info> {
         let remote = Self::replace_name(&self.patterns.info, &header.name);
         let content = self
             .load(remote.as_path(), &Resource::Info(header.name.to_owned()))
             .await?;
 
-        serde_yaml::from_slice(&content).map_err(|err| {
+        Info::load(content).map_err(|err| {
             anyhow!(
                 "Failed to parse info file for {}:\n\t{:?}",
                 header.identifier(),

@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
     }
 
     while let Some(res) = set.join_next().await {
-        let desc = res??.set_desc;
+        let desc = res??.description();
         println!("\n\t{desc}");
     }
 
