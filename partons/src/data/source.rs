@@ -1,5 +1,5 @@
 //! Interact with a remote source.
-use super::cache::{Cache, Resource};
+use super::cache::{Cache, Resource, Status};
 use super::header::Header;
 use super::index::Index;
 use crate::info::Info;
@@ -10,7 +10,6 @@ use bytes::Bytes;
 use serde::Deserialize;
 use thiserror::Error;
 
-use std::fs;
 use std::path::{Path, PathBuf};
 
 const NAME_PLACEHOLDER: &str = "{name}";
@@ -41,6 +40,25 @@ pub enum ConversionError {
     FieldType(String),
 }
 
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum Format {
+    Native,
+    Lhapdf,
+}
+
+impl Default for Format {
+    fn default() -> Self {
+        Format::Native
+    }
+}
+
+impl Format {
+    fn convert(&self, content: Bytes, resource: &Resource) -> Result<Bytes> {
+        Ok(content)
+    }
+}
+
 /// A remote registry.
 ///
 /// It contains the information to connect to a remote data source, and the methods to fetch and
@@ -50,6 +68,8 @@ pub struct Source {
     name: String,
     url: String,
     index: String,
+    #[serde(default)]
+    format: Format,
     #[serde(default)]
     pub(crate) patterns: Patterns,
     #[serde(skip)]
@@ -88,30 +108,45 @@ impl Source {
         Ok(reqwest::get(url).await?.bytes().await?)
     }
 
+    // TODO: this would fitly nice if implemented with mutual recursion with `fetch`; but async
+    // recursion is complex, so better to avoid
+    // https://rust-lang.github.io/async-book/07_workarounds/04_recursion.html
+    async fn converted(&self, url: &str, resource: &Resource) -> Result<Bytes> {
+        let mut raw = resource.path();
+        raw.push(Status::Raw.suffix());
+
+        let content = if !raw.exists() {
+            let content = Self::download(url).await?;
+
+            self.cache.clone().unwrap().write(raw.as_path(), &content);
+
+            content
+        } else {
+            self.cache.clone().unwrap().read(raw.as_path())?
+        };
+
+        self.format.convert(content, resource)
+    }
+
+    // Download whatever remote resources to raw bytes
     async fn fetch(&self, url: &str, resource: &Resource) -> Result<Bytes> {
         // TODO: turn prints in logs
         let content = if let Some(cache) = self.cache.as_ref() {
-            let location = cache.locate(resource)?;
-            println!("location: {location:?}");
+            let location = resource.path();
+            println!("caching in location '{location:?}'");
 
             if !location.exists() {
-                let content = Self::download(url).await?;
+                let content = if self.format == Format::Native {
+                    Self::download(url).await?
+                } else {
+                    self.converted(url, resource).await?
+                };
 
-                // TODO: move old to trash bin -> upgrade cache to struct
-                fs::create_dir_all(
-                    location
-                        .parent()
-                        .ok_or(anyhow!("Fail to access parent of '{location:?}'"))?,
-                )?;
-
-                fs::write(&location, &content)?;
-                println!("'{url}' cached");
+                cache.write(location.as_path(), &content);
 
                 content
             } else {
-                let content: Bytes = fs::read(&location)?.into();
-                println!("'{url}' loaded from cache");
-                content
+                cache.read(location.as_path())?
             }
         } else {
             Self::download(url).await?
