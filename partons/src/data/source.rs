@@ -2,6 +2,7 @@
 use super::cache::{Cache, Resource, Status};
 use super::header::Header;
 use super::index::Index;
+use super::lhapdf;
 use crate::info::Info;
 use crate::member::Member;
 
@@ -55,7 +56,11 @@ impl Default for Format {
 
 impl Format {
     fn convert(&self, content: Bytes, resource: &Resource) -> Result<Bytes> {
-        Ok(content)
+        let converted = match self {
+            Self::Native => content,
+            Self::Lhapdf => lhapdf::convert(content, resource),
+        };
+        Ok(converted)
     }
 }
 
@@ -113,12 +118,15 @@ impl Source {
     // https://rust-lang.github.io/async-book/07_workarounds/04_recursion.html
     async fn converted(&self, url: &str, resource: &Resource) -> Result<Bytes> {
         let mut raw = resource.path();
-        raw.push(Status::Raw.suffix());
+        // TODO: find a better way for this...
+        raw.set_extension(
+            raw.extension().unwrap().to_str().unwrap().to_owned() + &Status::Raw.suffix(),
+        );
 
         let content = if !raw.exists() {
             let content = Self::download(url).await?;
 
-            self.cache.clone().unwrap().write(raw.as_path(), &content);
+            self.cache.clone().unwrap().write(raw.as_path(), &content)?;
 
             content
         } else {
@@ -133,19 +141,20 @@ impl Source {
         // TODO: turn prints in logs
         let content = if let Some(cache) = self.cache.as_ref() {
             let location = resource.path();
-            println!("caching in location '{location:?}'");
 
-            if !location.exists() {
+            if !cache.exists(location.as_path()) {
+                println!("caching in location '{location:?}'");
                 let content = if self.format == Format::Native {
                     Self::download(url).await?
                 } else {
                     self.converted(url, resource).await?
                 };
 
-                cache.write(location.as_path(), &content);
+                cache.write(location.as_path(), &content)?;
 
                 content
             } else {
+                println!("loading from location '{location:?}'");
                 cache.read(location.as_path())?
             }
         } else {

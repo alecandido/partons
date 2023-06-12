@@ -13,6 +13,7 @@ const INFO_NAME: &str = "info.yaml";
 const MEMBER_PLACEHOLDER: &str = "{member}";
 const GRID_PATTERN: &str = "{member}.member.lz4";
 
+#[derive(Debug)]
 pub(crate) enum Resource {
     Index,
     Info(String),
@@ -71,6 +72,10 @@ impl Cache {
         let mut abs = self.path.clone();
         abs.push(relative);
         abs
+    }
+
+    pub(crate) fn exists(&self, relative: &Path) -> bool {
+        self.absolute(relative).exists()
     }
 
     pub(crate) fn write(&self, relative: &Path, content: &Bytes) -> Result<PathBuf> {

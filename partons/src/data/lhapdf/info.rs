@@ -1,12 +1,20 @@
-use crate::data::source::ConversionError::{self, FieldType, MissingField};
-use crate::info;
+use std::collections::HashMap;
 
+use anyhow::Result;
+use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
-use std::collections::HashMap;
+use crate::data::source::ConversionError::{self, FieldType, MissingField};
+use crate::info;
 
-pub type Info = HashMap<String, Value>;
+pub struct Info(HashMap<String, Value>);
+
+impl Info {
+    pub(crate) fn load(bytes: Bytes) -> Result<Self> {
+        Ok(Self(serde_yaml::from_slice(&bytes)?))
+    }
+}
 
 impl TryFrom<Info> for info::Info {
     type Error = ConversionError;
@@ -14,7 +22,7 @@ impl TryFrom<Info> for info::Info {
     fn try_from(value: Info) -> Result<Self, Self::Error> {
         // TODO: make this a macro
         let Value::String(description) =
-            value.get("SetDesc").ok_or(MissingField("description".to_owned()))?.clone()
+            value.0.get("SetDesc").ok_or(MissingField("description".to_owned()))?.clone()
             else { return Err(FieldType("description".to_owned())); };
         Ok(info::Info { description })
     }
