@@ -56,11 +56,10 @@ impl Default for Format {
 
 impl Format {
     fn convert(&self, content: Bytes, resource: &Resource) -> Result<Bytes> {
-        let converted = match self {
-            Self::Native => content,
+        match self {
+            Self::Native => Ok(content),
             Self::Lhapdf => lhapdf::convert(content, resource),
-        };
-        Ok(converted)
+        }
     }
 }
 
