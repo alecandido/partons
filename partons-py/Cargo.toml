@@ -1,6 +1,6 @@
 [package]
 authors = ["Alessandro Candido <candido.ale@gmail.com>"]
-description = "Partons library"
+description = "Partons python bindings"
 name = "partons-py"
 readme = "../README.md"
 

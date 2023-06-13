@@ -1,6 +1,6 @@
 [package]
 authors = ["Alessandro Candido <candido.ale@gmail.com>"]
-description = "Partons CLI"
+description = "Manage partons data."
 name = "partons-cli"
 readme = "../README.md"
 
@@ -17,3 +17,8 @@ version.workspace = true
 anyhow = "1.0.71"
 clap = { version = "4.3.3", features = ["derive", "cargo"] }
 partons = { path = "../partons", version = "0.0.1" }
+
+
+[[bin]]
+name = "partons"
+path = "src/main.rs"

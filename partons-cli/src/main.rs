@@ -1,17 +1,19 @@
 use std::process::{ExitCode, Termination};
 
+#[macro_use]
+mod macros;
+
+mod base;
 mod cache;
-mod subcommand;
 
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(name = "partons")]
 #[command(author, version, about)]
 #[command(disable_help_subcommand = true)]
 struct Cli {
     #[command(subcommand)]
-    command: subcommand::Command,
+    command: base::Command,
 }
 
 fn main() -> ExitCode {
