@@ -4,6 +4,8 @@ use std::process::ExitCode;
 use anyhow::Result;
 use clap::{Args, Subcommand};
 
+use partons::configs::Configs;
+
 #[derive(Debug, Args)]
 #[command(args_conflicts_with_subcommands = true)]
 pub(crate) struct ListArgs {
@@ -43,7 +45,8 @@ impl Default for LocalArgs {
 
 impl LocalArgs {
     fn run(self) -> Result<ExitCode> {
-        println!("Local content");
+        let configs = Configs::load();
+        println!("{configs:#?}");
         Ok(ExitCode::SUCCESS)
     }
 }

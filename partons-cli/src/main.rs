@@ -7,6 +7,7 @@ use clap::{Parser, Subcommand};
 mod macros;
 
 mod cache;
+mod configs;
 mod list;
 
 #[derive(Parser)]
@@ -21,12 +22,13 @@ struct Cli {
 #[derive(Subcommand)]
 pub(crate) enum Command {
     Cache(cache::CacheArgs),
+    Configs(configs::ConfigsArgs),
     List(list::ListArgs),
 }
 
 impl Command {
     pub(crate) fn run(self) -> Result<ExitCode> {
-        run!(self; Cache, List)
+        run!(self; Cache, Configs, List)
     }
 }
 

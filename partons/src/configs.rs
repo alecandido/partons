@@ -8,7 +8,7 @@ use super::data::source::Source;
 
 use anyhow::{bail, Result};
 use directories::ProjectDirs;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use std::env::current_dir;
 use std::path::PathBuf;
@@ -21,7 +21,7 @@ pub const NAME: &str = "partons.toml";
 /// Application configurations
 ///
 /// User configurations are directly deserialized from files in this structure.
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Configs {
     /// List of configured sources.
     pub sources: Vec<Source>,

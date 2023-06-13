@@ -8,14 +8,14 @@ use crate::member::Member;
 
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use std::path::{Path, PathBuf};
 
 const NAME_PLACEHOLDER: &str = "{name}";
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct Patterns {
     pub(crate) info: String,
     pub(crate) grids: String,
@@ -41,7 +41,7 @@ pub enum ConversionError {
     FieldType(String),
 }
 
-#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) enum Format {
     Native,
@@ -67,7 +67,7 @@ impl Format {
 ///
 /// It contains the information to connect to a remote data source, and the methods to fetch and
 /// load the content.
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Source {
     name: String,
     url: String,
