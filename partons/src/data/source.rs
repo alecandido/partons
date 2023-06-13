@@ -77,7 +77,7 @@ pub struct Source {
     #[serde(default)]
     pub(crate) patterns: Patterns,
     #[serde(skip)]
-    cache: Option<Cache>,
+    pub cache: Option<Cache>,
 }
 
 impl Source {

@@ -45,8 +45,20 @@ impl Default for LocalArgs {
 
 impl LocalArgs {
     fn run(self) -> Result<ExitCode> {
-        let configs = Configs::load();
-        println!("{configs:#?}");
+        let configs = Configs::load()?;
+        let path = configs.data_path()?;
+        let mut sources = configs.sources;
+
+        let mut sets = Vec::new();
+        for source in sources.iter_mut() {
+            source.register_cache(path.clone());
+            sets.extend(source.cache.clone().unwrap().sets()?)
+        }
+
+        sets.sort();
+        for set in sets.iter() {
+            println!("{set}");
+        }
         Ok(ExitCode::SUCCESS)
     }
 }

@@ -2,7 +2,7 @@
 //!
 //! Each source has its own cache.
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use bytes::Bytes;
 
 use std::fs;
@@ -57,7 +57,7 @@ impl Status {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Cache {
+pub struct Cache {
     path: PathBuf,
 }
 
@@ -100,5 +100,15 @@ impl Cache {
         let content = fs::read(&location)?.into();
         println!("'{location:?}' loaded from cache");
         Ok(content)
+    }
+
+    pub fn sets(&self) -> Result<Vec<String>> {
+        let mut sets_ = Vec::new();
+        for entry in fs::read_dir(&self.path)? {
+            let os_name = entry?.file_name();
+            let name = os_name.to_str().context("Invalid set name encountered.")?;
+            sets_.push(format!("{name}"))
+        }
+        Ok(sets_)
     }
 }
