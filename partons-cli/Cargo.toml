@@ -1,8 +1,19 @@
 [package]
+authors = ["Alessandro Candido <candido.ale@gmail.com>"]
+description = "Partons CLI"
 name = "partons-cli"
-version = "0.1.0"
-edition = "2021"
+readme = "../README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+categories.workspace = true
+edition.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
 
 [dependencies]
+anyhow = "1.0.71"
+clap = { version = "4.3.3", features = ["derive", "cargo"] }
+partons = { path = "../partons", version = "0.0.1" }
