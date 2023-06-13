@@ -157,7 +157,7 @@ impl Source {
                 cache.read(location.as_path())?
             }
         } else {
-            Self::download(url).await?
+            self.format.convert(Self::download(url).await?, resource)?
         };
 
         Ok(content)
