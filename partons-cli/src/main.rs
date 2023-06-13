@@ -1,19 +1,33 @@
 use std::process::{ExitCode, Termination};
 
+use anyhow::Result;
+use clap::{Parser, Subcommand};
+
 #[macro_use]
 mod macros;
 
-mod base;
 mod cache;
-
-use clap::Parser;
+mod list;
 
 #[derive(Parser)]
+#[command(name = "partons")]
 #[command(author, version, about)]
 #[command(disable_help_subcommand = true)]
 struct Cli {
     #[command(subcommand)]
-    command: base::Command,
+    command: Command,
+}
+
+#[derive(Subcommand)]
+pub(crate) enum Command {
+    Cache(cache::CacheArgs),
+    List(list::ListArgs),
+}
+
+impl Command {
+    pub(crate) fn run(self) -> Result<ExitCode> {
+        run!(self; Cache, List)
+    }
 }
 
 fn main() -> ExitCode {
