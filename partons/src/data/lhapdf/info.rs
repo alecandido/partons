@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
@@ -60,6 +61,7 @@ impl TryFrom<Info> for info::Info {
             description,
             authors,
             year,
+            more_members: value.0,
         })
     }
 }
@@ -70,12 +72,6 @@ pub type PID = String;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct DetailedInfo {
-    #[serde(rename = "SetDesc")]
-    set_desc: String,
-    #[serde(rename = "SetIndex")]
-    set_index: u32,
-    #[serde(rename = "Authors")]
-    authors: String, // TODO: replace with sequence of strings
     #[serde(default, rename = "Reference")]
     reference: Option<String>,
     #[serde(default, rename = "Format")]

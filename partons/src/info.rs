@@ -1,11 +1,14 @@
 //! Store metadata of a set
 
+use std::{collections::HashMap, hash::Hash};
+
 use anyhow::Result;
 use bytes::Bytes;
 use serde::{
     de::{self, Visitor},
     Deserialize, Serialize,
 };
+use serde_yaml::Value;
 
 /// Set metadata
 #[derive(Serialize, Deserialize, Debug)]
@@ -18,6 +21,11 @@ pub struct Info {
     pub authors: String,
     /// Fitting year
     pub year: Option<u64>,
+    /// Extra information to keep
+    ///
+    /// This field is here to store, mainly, legacy fields, that should be kept, but
+    /// TODO: find a better name, for the time being I'm using PineAPPL's one
+    pub more_members: HashMap<String, Value>,
 }
 
 impl Info {
