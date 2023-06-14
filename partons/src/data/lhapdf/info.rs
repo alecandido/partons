@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
@@ -16,15 +16,51 @@ impl Info {
     }
 }
 
+macro_rules! extract {
+    ($name:ident, $type:ident, $lha_name:literal, $value:ident) => {
+        let wrong_type = Err(FieldType(stringify!($name).to_owned()));
+        let $name = $value
+            .0
+            .get($lha_name)
+            .map(|v| {
+                let Value::$type(num) = v else { return wrong_type};
+                Ok(num)
+            })
+            .transpose()?;
+    };
+}
+
+macro_rules! convert {
+    ($name:ident, u64, $lha_name:literal, $value:ident) => {
+        extract!($name, Number, $lha_name, $value);
+        let $name = $name.map(|n| n.as_u64().unwrap());
+    };
+    ($name:ident, String, $lha_name:literal, $value:ident) => {
+        extract!($name, String, $lha_name, $value);
+        let $name = $name.map(|s| s.to_owned());
+    };
+    ($name:ident, $type:ident, $lha_name:literal, $value:ident, ?) => {
+        convert!($name, $type, $lha_name, $value);
+        let missing = MissingField(stringify!($name).to_owned());
+        let $name = $name.ok_or(missing)?;
+    };
+}
+
+// let missing = ;
 impl TryFrom<Info> for info::Info {
     type Error = ConversionError;
 
     fn try_from(value: Info) -> Result<Self, Self::Error> {
-        // TODO: make this a macro
-        let Value::String(description) =
-            value.0.get("SetDesc").ok_or(MissingField("description".to_owned()))?.clone()
-            else { return Err(FieldType("description".to_owned())); };
-        Ok(info::Info { description })
+        convert!(id, u64, "SetIndex", value);
+        convert!(description, String, "SetDesc", value, ?);
+        convert!(authors, String, "Authors", value, ?);
+        convert!(year, u64, "Year", value);
+        Ok(info::Info {
+            id,
+            description,
+            authors,
+            year,
+        })
     }
 }
 

@@ -10,8 +10,14 @@ use serde::{
 /// Set metadata
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Info {
+    /// Numerical identifier, within the source
+    pub id: Option<u64>,
     /// Unstructured description
     pub description: String,
+    /// List of authors
+    pub authors: String,
+    /// Fitting year
+    pub year: Option<u64>,
 }
 
 impl Info {
