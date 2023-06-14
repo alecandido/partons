@@ -31,16 +31,16 @@ macro_rules! extract {
 }
 
 macro_rules! convert {
-    ($name:ident, u64, $lha_name:literal, $value:ident) => {
+    ($name:ident: u64 = $value:ident[$lha_name:literal]) => {
         extract!($name, Number, $lha_name, $value);
         let $name = $name.map(|n| n.as_u64().unwrap());
     };
-    ($name:ident, String, $lha_name:literal, $value:ident) => {
+    ($name:ident: String = $value:ident[$lha_name:literal]) => {
         extract!($name, String, $lha_name, $value);
         let $name = $name.map(|s| s.to_owned());
     };
-    ($name:ident, $type:ident, $lha_name:literal, $value:ident, ?) => {
-        convert!($name, $type, $lha_name, $value);
+    ($name:ident: Option<$type:ident> = $value:ident[$lha_name:literal]) => {
+        convert!($name: $type = $value[$lha_name]);
         let missing = MissingField(stringify!($name).to_owned());
         let $name = $name.ok_or(missing)?;
     };
@@ -51,10 +51,10 @@ impl TryFrom<Info> for info::Info {
     type Error = ConversionError;
 
     fn try_from(value: Info) -> Result<Self, Self::Error> {
-        convert!(id, u64, "SetIndex", value);
-        convert!(description, String, "SetDesc", value, ?);
-        convert!(authors, String, "Authors", value, ?);
-        convert!(year, u64, "Year", value);
+        convert!(id: u64 = value["SetIndex"]);
+        convert!(description: Option<String> = value["SetDesc"]);
+        convert!(authors: Option<String> = value["Authors"]);
+        convert!(year: u64 = value["Year"]);
         Ok(info::Info {
             id,
             description,
