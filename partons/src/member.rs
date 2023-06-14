@@ -1,5 +1,5 @@
 //! Member of a set
-use crate::{block::Block, data::lhapdf};
+use crate::block::Block;
 
 use serde::{Deserialize, Serialize};
 

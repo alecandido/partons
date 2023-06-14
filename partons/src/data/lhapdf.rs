@@ -16,6 +16,9 @@ pub(crate) fn convert(bytes: Bytes, resource: &Resource) -> Result<Bytes> {
             let raw_bytes = serde_yaml::to_string(&converted)?.into_bytes();
             Ok(Bytes::copy_from_slice(&raw_bytes))
         }
+        Resource::Set(_) => {
+            todo!()
+        }
         Resource::Grid(_, _) => {
             let converted = grid::Grid::load(bytes)?.try_into()?;
             let wrapper = MemberWrapper { member: converted };

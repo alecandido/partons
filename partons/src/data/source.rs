@@ -4,9 +4,8 @@ use super::header::Header;
 use super::index::Index;
 use super::lhapdf;
 use crate::info::Info;
-use crate::member::Member;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -77,7 +76,7 @@ pub struct Source {
     #[serde(default)]
     pub(crate) patterns: Patterns,
     #[serde(skip)]
-    pub cache: Option<Cache>,
+    pub cache_: Option<Cache>,
 }
 
 impl Source {
@@ -104,7 +103,11 @@ impl Source {
     /// See [`Configs`](crate::configs::Configs) to learn how to load them, and in particular
     /// [`Configs::new`](crate::configs::Configs::new).
     pub fn register_cache(&mut self, data_path: PathBuf) {
-        self.cache = Some(Cache::new(&self.name, data_path));
+        self.cache_ = Some(Cache::new(&self.name, data_path));
+    }
+
+    fn cache(&self) -> Result<&Cache> {
+        self.cache_.as_ref().ok_or(anyhow!("Cache not registered."))
     }
 
     // Download whatever remote resources to raw bytes
@@ -122,14 +125,16 @@ impl Source {
             raw.extension().unwrap().to_str().unwrap().to_owned() + &Status::Raw.suffix(),
         );
 
+        let cache = self.cache()?;
+
         let content = if !raw.exists() {
             let content = Self::download(url).await?;
 
-            self.cache.clone().unwrap().write(raw.as_path(), &content)?;
+            cache.write(resource, &content)?;
 
             content
         } else {
-            self.cache.clone().unwrap().read(raw.as_path())?
+            cache.read(resource)?
         };
 
         self.format.convert(content, resource)
@@ -138,26 +143,19 @@ impl Source {
     // Download whatever remote resources to raw bytes
     async fn fetch(&self, url: &str, resource: &Resource) -> Result<Bytes> {
         // TODO: turn prints in logs
-        let content = if let Some(cache) = self.cache.as_ref() {
-            let location = resource.path();
+        println!("Fetching content from {url}");
+        let cache = self.cache()?;
 
-            if !cache.exists(location.as_path()) {
-                println!("caching in location '{location:?}'");
-                let content = if self.format == Format::Native {
-                    Self::download(url).await?
-                } else {
-                    self.converted(url, resource).await?
-                };
+        let content = if !cache.exists(resource) {
+            println!("caching resource '{resource}'");
+            let content = self.converted(url, resource).await?;
 
-                cache.write(location.as_path(), &content)?;
+            cache.write(resource, &content)?;
 
-                content
-            } else {
-                println!("loading from location '{location:?}'");
-                cache.read(location.as_path())?
-            }
+            content
         } else {
-            self.format.convert(Self::download(url).await?, resource)?
+            println!("loading from location '{resource}'");
+            cache.read(resource)?
         };
 
         Ok(content)
@@ -194,6 +192,7 @@ impl Source {
         format!("{endpoint}{path}", endpoint = self.url).to_owned()
     }
 
+    /// `remote` is the URL path on the remote source.
     async fn load(&self, remote: &Path, resource: &Resource) -> Result<Bytes> {
         let url = self.url(
             remote
@@ -242,40 +241,13 @@ impl Source {
     }
 
     /// Fetch set member.
-    ///
-    /// ```
-    /// # use partons::configs::Configs;
-    /// # use partons::member::Member;
-    /// # use anyhow::Result;
-    /// # use std::env;
-    /// #
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<()> {
-    /// #     let mut path = env::current_dir()?;
-    /// #     path.push("../partons.toml");
-    ///       let configs = Configs::new(path)?;
-    ///       let index = configs.sources[0].index().await?;
-    ///       let entry = index.get("NNPDF40_nnlo_as_01180")?;
-    ///       let member: Member = configs.sources[0].member(&entry, 0).await?;
-    /// #     Ok(())
-    /// # }
-    /// ```
-    pub async fn member(&self, header: &Header, member: u32) -> Result<Member> {
+    pub async fn set(&self, header: &Header) -> Result<PathBuf> {
         let remote = Self::replace_name(&self.patterns.grids, &header.name);
 
         let content = self
-            .load(
-                remote.as_path(),
-                &Resource::Grid(header.name.to_owned(), member),
-            )
+            .load(remote.as_path(), &Resource::Set(header.name.to_owned()))
             .await?;
 
-        Member::load(content).map_err(|err| {
-            anyhow!(
-                "Failed to parse grid file for {}:\n\t{:?}",
-                header.identifier(),
-                err
-            )
-        })
+        Ok(PathBuf::new())
     }
 }

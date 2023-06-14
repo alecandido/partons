@@ -6,7 +6,8 @@ use partons::configs::Configs;
 async fn main() -> Result<()> {
     let cfg = Configs::load()?;
 
-    let source = cfg.sources[0].clone();
+    let mut source = cfg.sources[0].clone();
+    source.register_cache(cfg.data_path()?);
     let index = source.index().await?;
 
     // display the first element, if non-empty
