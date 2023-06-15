@@ -35,15 +35,15 @@ impl Member {
         &self,
         pid: &Array1<i32>,
         x: &Array1<f64>,
-        q2: &Array1<f64>,
+        mu2: &Array1<f64>,
         nf: &Array1<u8>,
     ) -> Result<Array1<f64>> {
-        if x.shape() != q2.shape() || x.shape() != nf.shape() {
+        if x.shape() != mu2.shape() || x.shape() != nf.shape() {
             bail!("Incompatible array shapes.")
         }
 
         let mut values: Array1<f64> = Array1::zeros(x.raw_dim());
-        values[0] = self.blocks[(nf[0] - 3) as usize].interp(pid[0], x[0], q2[0])?;
+        values[0] = self.blocks[(nf[0] - 3) as usize].interp(pid[0], x[0], mu2[0])?;
 
         Ok(values)
     }

@@ -10,6 +10,9 @@ use serde::{
 };
 use serde_yaml::Value;
 
+/// Particle ID
+pub type PID = i64;
+
 /// Set metadata
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Info {
@@ -21,6 +24,18 @@ pub struct Info {
     pub authors: String,
     /// Fitting year
     pub year: Option<u64>,
+    /// A reference to the paper that describes this set
+    pub reference: Option<String>,
+    /// The Monte Carlo particle ID for the parent particle
+    pub particle: Option<PID>,
+    /// Perturbative order
+    pub order: (u64, u64),
+    ///
+    pub error_type: Option<String>,
+    ///
+    pub data_version: Option<i64>,
+    ///
+    pub note: Option<String>,
     /// Extra information to keep
     ///
     /// This field is here to store, mainly, legacy fields, that should be kept, but

@@ -97,7 +97,7 @@ impl Source {
             // cache the raw contnet
             cache.write(&resource, &content)?;
 
-            let content = cache.unpack(&resource, content)?;
+            let content = cache.unpack(&resource, &self.format, content)?;
             content
         } else {
             cache.read(&resource)?

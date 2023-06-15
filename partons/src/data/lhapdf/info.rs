@@ -36,11 +36,22 @@ macro_rules! convert {
         extract!($name, Number, $lha_name, $value);
         let $name = $name.map(|n| n.as_u64().unwrap());
     };
+    ($name:ident: i64 = $value:ident[$lha_name:literal]) => {
+        extract!($name, Number, $lha_name, $value);
+        let $name = $name.map(|n| n.as_i64().unwrap());
+    };
+    ($name:ident: PID = $value:ident[$lha_name:literal]) => {
+        convert!($name: i64 = $value[$lha_name]);
+    };
+    ($name:ident: f64 = $value:ident[$lha_name:literal]) => {
+        extract!($name, Number, $lha_name, $value);
+        let $name = $name.map(|n| n.as_f64().unwrap());
+    };
     ($name:ident: String = $value:ident[$lha_name:literal]) => {
         extract!($name, String, $lha_name, $value);
         let $name = $name.map(|s| s.to_owned());
     };
-    ($name:ident: Option<$type:ident> = $value:ident[$lha_name:literal]) => {
+    (Some($name:ident: $type:ident) = $value:ident[$lha_name:literal]) => {
         convert!($name: $type = $value[$lha_name]);
         let missing = MissingField(stringify!($name).to_owned());
         let $name = $name.ok_or(missing)?;
@@ -53,14 +64,26 @@ impl TryFrom<Info> for info::Info {
 
     fn try_from(value: Info) -> Result<Self, Self::Error> {
         convert!(id: u64 = value["SetIndex"]);
-        convert!(description: Option<String> = value["SetDesc"]);
-        convert!(authors: Option<String> = value["Authors"]);
+        convert!(Some(description: String) = value["SetDesc"]);
+        convert!(Some(authors: String) = value["Authors"]);
         convert!(year: u64 = value["Year"]);
+        convert!(reference: String = value["Reference"]);
+        convert!(particle: PID = value["Particle"]);
+        convert!(Some(order_qcd: u64) = value["OrderQCD"]);
+        convert!(error_type: String = value["ErrorType"]);
+        convert!(data_version: i64 = value["Note"]);
+        convert!(note: String = value["Note"]);
         Ok(info::Info {
             id,
             description,
             authors,
             year,
+            reference,
+            particle,
+            order: (order_qcd, 0),
+            error_type,
+            data_version,
+            note,
             more_members: value.0,
         })
     }
@@ -68,40 +91,15 @@ impl TryFrom<Info> for info::Info {
 
 // This should be i32, but unfortunately it is not honored by all sets:
 // https://lhapdfsets.web.cern.ch/current/JAM20-SIDIS_FF_hadron_nlo/JAM20-SIDIS_FF_hadron_nlo.info
-pub type PID = String;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct DetailedInfo {
-    #[serde(default, rename = "Reference")]
-    reference: Option<String>,
     #[serde(default, rename = "Format")]
     format: Option<String>, // TODO: replace with enum
-    #[serde(rename = "DataVersion")]
-    data_version: u32,
-    #[serde(rename = "NumMembers")]
-    num_members: u32,
-    #[serde(default, rename = "Particle")]
-    particle: Option<PID>,
-    #[serde(rename = "Flavors")]
-    flavors: Vec<PID>,
     #[serde(default, rename = "OrderQCD")]
     order_qcd: Option<u32>,
-    #[serde(rename = "FlavorScheme")]
-    flavor_scheme: String, // TODO: replace with enum
-    #[serde(default, rename = "NumFlavors")]
-    num_flavors: Option<u32>,
     #[serde(default, rename = "ErrorType")]
     error_type: Option<String>, // TODO: replace with enum
-    #[serde(rename = "XMin")]
-    x_min: f64,
-    #[serde(rename = "XMax")]
-    x_max: f64,
-    #[serde(rename = "QMin")]
-    q_min: f64,
-    #[serde(rename = "QMax")]
-    q_max: f64,
-    #[serde(default, rename = "MZ")]
-    mz: Option<f64>,
     #[serde(default, rename = "MUp")]
     m_up: Option<f64>,
     #[serde(default, rename = "MDown")]

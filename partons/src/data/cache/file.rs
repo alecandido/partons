@@ -8,7 +8,10 @@ use bytes::Bytes;
 use flate2::read::GzDecoder;
 use tar::Archive;
 
-use super::super::resource::{Data, Resource, State};
+use super::super::{
+    format::Format,
+    resource::{Data, Resource, State},
+};
 
 const INDEX_NAME: &str = "index.csv";
 const INFO_NAME: &str = "info.yaml";
@@ -114,7 +117,12 @@ impl Cache {
         Ok(content)
     }
 
-    pub(crate) fn unpack(&self, resource: &Resource, content: Bytes) -> Result<Bytes> {
+    pub(crate) fn unpack(
+        &self,
+        resource: &Resource,
+        format: &Format,
+        content: Bytes,
+    ) -> Result<Bytes> {
         let mut location = self.absolute(resource);
 
         match resource.data {
