@@ -26,24 +26,43 @@ pub(crate) enum Resource {
 }
 
 impl Resource {
-    pub(crate) fn path(&self) -> PathBuf {
+    fn dir_file(&self) -> (PathBuf, String) {
         let mut path_ = PathBuf::new();
 
-        match self {
-            Resource::Index => path_.push(INDEX_NAME),
-            Resource::Info(name) => {
+        let file_name = match self {
+            Self::Index => INDEX_NAME.to_owned(),
+            Self::Info(name) => {
                 path_.push(&name);
-                path_.push(INFO_NAME)
+                INFO_NAME.to_owned()
             }
-            Resource::Set(name) => {
+            Self::Set(name) => {
                 path_.push(&name);
-                path_.push(SET_NAME)
+                SET_NAME.to_owned()
             }
-            Resource::Grid(name, member) => {
+            Self::Grid(name, member) => {
                 path_.push(name);
-                path_.push(GRID_PATTERN.replace(MEMBER_PLACEHOLDER, &format!("{member:0>6}")))
+                GRID_PATTERN.replace(MEMBER_PLACEHOLDER, &format!("{member:0>6}"))
             }
         };
+
+        (path_, file_name)
+    }
+
+    pub(crate) fn path(&self) -> PathBuf {
+        let (mut path_, file_name) = self.dir_file();
+
+        path_.push(file_name);
+
+        path_
+    }
+
+    pub(crate) fn raw_path(&self) -> PathBuf {
+        let (mut path_, file_name) = self.dir_file();
+
+        let prefix = format!("{}.", &Status::Raw.marker());
+        let file_name = prefix + &file_name;
+
+        path_.push(file_name);
 
         path_
     }
@@ -67,10 +86,10 @@ pub(crate) enum Status {
 }
 
 impl Status {
-    pub(crate) fn suffix(&self) -> String {
+    pub(crate) fn marker(&self) -> String {
         match self {
             Self::Normal => "",
-            Self::Raw => ".raw",
+            Self::Raw => "raw",
         }
         .to_owned()
     }

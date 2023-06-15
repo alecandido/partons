@@ -119,12 +119,7 @@ impl Source {
     // recursion is complex, so better to avoid
     // https://rust-lang.github.io/async-book/07_workarounds/04_recursion.html
     async fn converted(&self, url: &str, resource: &Resource) -> Result<Bytes> {
-        let mut raw = resource.path();
-        // TODO: find a better way for this...
-        raw.set_extension(
-            raw.extension().unwrap().to_str().unwrap().to_owned() + &Status::Raw.suffix(),
-        );
-
+        let raw = resource.raw_path();
         let cache = self.cache()?;
 
         let content = if !raw.exists() {
