@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 
 use super::header::Header;
 use super::resource::Data;
-use super::source::Source;
+use super::source::{runtime, Source};
 use crate::info::Info;
 
 impl Source {
@@ -44,7 +44,8 @@ impl Source {
 }
 
 impl Info {
-    pub fn fetch(source: &mut Source, header: &Header) -> Result<Self> {
-        source.runtime().block_on(source.info(header))
+    /// Fetch info synchronously.
+    pub fn fetch(source: &Source, header: &Header) -> Result<Self> {
+        runtime().block_on(source.info(header))
     }
 }

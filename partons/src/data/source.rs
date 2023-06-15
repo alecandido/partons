@@ -31,7 +31,7 @@ impl Default for Patterns {
 ///
 /// It contains the information to connect to a remote data source, and the methods to fetch and
 /// load the content.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Source {
     pub(crate) name: String,
     url: String,
@@ -47,8 +47,6 @@ pub struct Source {
     // TODO: consider to store source configs in a separate struct, and deserialize that.
     #[serde(skip)]
     pub cache: Option<Cache>,
-    #[serde(skip)]
-    runtime: Option<Runtime>,
 }
 
 impl Source {
@@ -80,19 +78,6 @@ impl Source {
 
     fn cache(&self) -> Result<&Cache> {
         self.cache.as_ref().ok_or(anyhow!("Cache not registered."))
-    }
-
-    pub(crate) fn runtime(&mut self) -> &Runtime {
-        if let None = self.runtime {
-            self.runtime = Some(
-                tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap(),
-            );
-        }
-
-        self.runtime.as_ref().unwrap()
     }
 
     // Download whatever remote resources to raw bytes
@@ -163,4 +148,12 @@ impl Source {
     pub(crate) fn replace_name(pattern: &str, name: &str) -> PathBuf {
         PathBuf::from(pattern.replace(NAME_PLACEHOLDER, name))
     }
+}
+
+// TODO: assign this to some structure in order not to lose it every time
+pub(crate) fn runtime() -> Runtime {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
 }
