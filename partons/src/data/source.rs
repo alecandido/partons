@@ -174,7 +174,9 @@ impl Source {
     /// #     let mut path = env::current_dir()?;
     /// #     path.push("../partons.toml");
     ///       let configs = Configs::new(path)?;
-    ///       let index: Index = configs.sources[0].index().await?;
+    ///       let mut source = configs.sources[0].clone();
+    ///       source.register_cache(configs.data_path()?);
+    ///       let index: Index = source.index().await?;
     /// #     Ok(())
     /// # }
     /// ```
@@ -217,9 +219,11 @@ impl Source {
     /// #     let mut path = env::current_dir()?;
     /// #     path.push("../partons.toml");
     ///       let configs = Configs::new(path)?;
-    ///       let index = configs.sources[0].index().await?;
+    ///       let mut source = configs.sources[0].clone();
+    ///       source.register_cache(configs.data_path()?);
+    ///       let index = source.index().await?;
     ///       let entry = index.get("NNPDF40_nnlo_as_01180")?;
-    ///       let info: Info = configs.sources[0].info(&entry).await?;
+    ///       let info: Info = source.info(&entry).await?;
     /// #     Ok(())
     /// # }
     /// ```
