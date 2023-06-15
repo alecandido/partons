@@ -1,9 +1,7 @@
 use std::collections::HashMap;
-use std::fmt::Debug;
 
 use anyhow::Result;
 use bytes::Bytes;
-use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
 use crate::data::format::ConversionError::{self, FieldType, MissingField};
@@ -87,47 +85,4 @@ impl TryFrom<Info> for info::Info {
             more_members: value.0,
         })
     }
-}
-
-// This should be i32, but unfortunately it is not honored by all sets:
-// https://lhapdfsets.web.cern.ch/current/JAM20-SIDIS_FF_hadron_nlo/JAM20-SIDIS_FF_hadron_nlo.info
-
-#[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct DetailedInfo {
-    #[serde(default, rename = "Format")]
-    format: Option<String>, // TODO: replace with enum
-    #[serde(default, rename = "OrderQCD")]
-    order_qcd: Option<u32>,
-    #[serde(default, rename = "ErrorType")]
-    error_type: Option<String>, // TODO: replace with enum
-    #[serde(default, rename = "MUp")]
-    m_up: Option<f64>,
-    #[serde(default, rename = "MDown")]
-    m_down: Option<f64>,
-    #[serde(default, rename = "MStrange")]
-    m_strange: Option<f64>,
-    #[serde(default, rename = "MCharm")]
-    m_charm: Option<f64>,
-    #[serde(default, rename = "MBottom")]
-    m_bottom: Option<f64>,
-    #[serde(default, rename = "MTop")]
-    m_top: Option<f64>,
-    #[serde(default, rename = "AlphaS_MZ")]
-    alpha_s_mz: Option<f64>,
-    #[serde(default, rename = "AlphaS_OrderQCD")]
-    alpha_s_order_qcd: Option<u32>,
-    #[serde(default, rename = "AlphaS_Type")]
-    alpha_s_type: Option<String>, // TODO: replace with enum
-    #[serde(default, rename = "AlphaS_Qs")]
-    alpha_s_qs: Option<Vec<f64>>,
-    #[serde(default, rename = "AlphaS_Vals")]
-    alpha_s_vals: Option<Vec<f64>>,
-    #[serde(default, rename = "AlphaS_Lambda4")]
-    alpha_s_lambda4: Option<f64>,
-    #[serde(default, rename = "AlphaS_Lambda5")]
-    alpha_s_lambda5: Option<f64>,
-    #[serde(default, rename = "Extrapolator")]
-    extrapolator: Option<String>, // TODO: replace with enum
-    #[serde(default)]
-    _more: HashMap<String, String>,
 }
