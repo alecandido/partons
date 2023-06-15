@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;

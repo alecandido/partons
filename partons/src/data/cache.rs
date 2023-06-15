@@ -3,7 +3,7 @@
 //! Each source has its own cache.
 use std::fmt;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anyhow::bail;
 use anyhow::{anyhow, Context, Result};
@@ -15,14 +15,13 @@ const INDEX_NAME: &str = "index.csv";
 const INFO_NAME: &str = "info.yaml";
 const SET_NAME: &str = "set.tar.gz";
 const MEMBER_PLACEHOLDER: &str = "{member}";
-const GRID_PATTERN: &str = "{member}.member.lz4";
+const MEMBER_PATTERN: &str = "{member}.member.lz4";
 
-#[derive(Debug)]
 pub(crate) enum Resource {
     Index,
     Info(String),
     Set(String),
-    Grid(String, u32),
+    Member(String, u32),
 }
 
 impl Resource {
@@ -39,9 +38,9 @@ impl Resource {
                 path_.push(&name);
                 SET_NAME.to_owned()
             }
-            Self::Grid(name, member) => {
+            Self::Member(name, member) => {
                 path_.push(name);
-                GRID_PATTERN.replace(MEMBER_PLACEHOLDER, &format!("{member:0>6}"))
+                MEMBER_PATTERN.replace(MEMBER_PLACEHOLDER, &format!("{member:0>6}"))
             }
         };
 
@@ -71,15 +70,15 @@ impl Resource {
 impl fmt::Display for Resource {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Resource::Index => write!(f, "Index"),
-            Resource::Info(set) => write!(f, "Info: {set}"),
-            Resource::Set(set) => write!(f, "Set: {set}"),
-            Resource::Grid(set, num) => write!(f, "Grid: {set}-{num}"),
+            Self::Index => write!(f, "Index"),
+            Self::Info(set) => write!(f, "Info: {set}"),
+            Self::Set(set) => write!(f, "Set: {set}"),
+            Self::Member(set, num) => write!(f, "Grid: {set}-{num}"),
         }
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub(crate) enum Status {
     Normal,
     Raw,
@@ -95,6 +94,16 @@ impl Status {
     }
 }
 
+/// Cache fetched resources.
+///
+/// ## File system independence
+/// Currently, the cache heavily relies on the files system, but this should be only one type of
+/// cache.
+/// Most of the methods definitions (the public ones) should be lifted to a `Cache` trait, and this
+/// should be a `FileSystemCache` implementor, while a `MemoryCache` will be a further one.
+/// It should be possible to control which one to be used from configurations, and those available
+/// from feature gates, such that the file system one will only be compiled for platforms who
+/// support it.
 #[derive(Debug, Clone)]
 pub struct Cache {
     path: PathBuf,
@@ -117,7 +126,7 @@ impl Cache {
         self.absolute(resource).exists()
     }
 
-    pub(crate) fn write(&self, resource: &Resource, content: &Bytes) -> Result<PathBuf> {
+    pub(crate) fn write(&self, resource: &Resource, content: &Bytes) -> Result<()> {
         let location = self.absolute(resource);
 
         // TODO: move old to trash bin
@@ -130,7 +139,7 @@ impl Cache {
         fs::write(&location, &content)?;
         println!("'{location:?}' cached");
 
-        Ok(location)
+        Ok(())
     }
 
     pub(crate) fn read(&self, resource: &Resource) -> Result<Bytes> {
@@ -144,7 +153,7 @@ impl Cache {
         Ok(content)
     }
 
-    pub(crate) fn unpack(&self, resource: &Resource) -> Result<PathBuf> {
+    pub(crate) fn unpack(&self, resource: &Resource, content: Bytes) -> Result<Bytes> {
         let mut location = self.absolute(resource);
 
         match resource {
@@ -157,9 +166,9 @@ impl Cache {
                     bail!("Parent not available");
                 };
                 archive.unpack(&location).unwrap();
-                Ok(location)
+                Ok(Bytes::new())
             }
-            _ => Ok(location),
+            _ => Ok(content),
         }
     }
 

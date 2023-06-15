@@ -1,6 +1,6 @@
 //! Store metadata of a set
 
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
 
 use anyhow::Result;
 use bytes::Bytes;

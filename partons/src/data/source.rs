@@ -1,11 +1,11 @@
 //! Interact with a remote source.
-use super::cache::{Cache, Resource, Status};
+use super::cache::{Cache, Resource};
 use super::header::Header;
 use super::index::Index;
 use super::lhapdf;
 use crate::info::Info;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -68,13 +68,18 @@ impl Format {
 /// load the content.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Source {
-    name: String,
+    pub(crate) name: String,
     url: String,
     index: String,
     #[serde(default)]
     format: Format,
     #[serde(default)]
     pub(crate) patterns: Patterns,
+    /// The data cache
+    ///
+    /// Since it should be loaded separately from configurations, during configs deserialization is
+    /// set to `None`.
+    // TODO: consider to store source configs in a separate struct, and deserialize that.
     #[serde(skip)]
     pub cache_: Option<Cache>,
 }
@@ -115,18 +120,16 @@ impl Source {
         Ok(reqwest::get(url).await?.bytes().await?)
     }
 
-    // TODO: this would fitly nice if implemented with mutual recursion with `fetch`; but async
-    // recursion is complex, so better to avoid
-    // https://rust-lang.github.io/async-book/07_workarounds/04_recursion.html
     async fn converted(&self, url: &str, resource: &Resource) -> Result<Bytes> {
         let raw = resource.raw_path();
         let cache = self.cache()?;
 
         let content = if !raw.exists() {
             let content = Self::download(url).await?;
-
+            // cache the raw contnet
             cache.write(resource, &content)?;
 
+            let content = cache.unpack(resource, content)?;
             content
         } else {
             cache.read(resource)?
@@ -236,13 +239,12 @@ impl Source {
     }
 
     /// Fetch set member.
-    pub async fn set(&self, header: &Header) -> Result<PathBuf> {
+    pub async fn set(&self, header: &Header) -> Result<()> {
         let remote = Self::replace_name(&self.patterns.grids, &header.name);
 
-        let content = self
-            .load(remote.as_path(), &Resource::Set(header.name.to_owned()))
+        self.load(remote.as_path(), &Resource::Set(header.name.to_owned()))
             .await?;
 
-        Ok(PathBuf::new())
+        Ok(())
     }
 }

@@ -37,6 +37,6 @@ pub mod configs;
 pub mod info;
 pub mod member;
 mod quantity;
-mod set;
+pub mod set;
 
 pub mod data;

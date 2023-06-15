@@ -13,8 +13,8 @@ async fn main() -> Result<()> {
     // display the first element, if non-empty
     for set in ["NNPDF40_nnlo_as_01180", "MSHT20nnlo_as118", "CT18NNLO"] {
         let header = index.get(set)?;
-        let grid = source.member(&header, 0).await?;
-        println!("{grid:#?}");
+        let set = source.set(&header).await?;
+        println!("{set:#?}");
     }
 
     Ok(())

@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use bytes::Bytes;
+use ndarray::{Array1, Array3};
 
 use crate::block::Block;
 use crate::data::source::ConversionError;
@@ -12,8 +13,13 @@ pub(crate) struct Grid {
 }
 
 impl Grid {
-    pub(crate) fn load(bytes: Bytes) -> Result<Self> {
-        let blocks = vec![];
+    pub(crate) fn load(_bytes: Bytes) -> Result<Self> {
+        let blocks = vec![Block::new(
+            Array1::from(vec![]),
+            Array1::from(vec![]),
+            Array1::from(vec![]),
+            Array3::zeros((0, 0, 0)),
+        )];
         Ok(Self { blocks })
     }
 }
