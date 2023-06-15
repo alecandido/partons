@@ -134,7 +134,6 @@ impl Cache {
                 if !location.pop() {
                     bail!("Parent not available");
                 };
-                println!("\n---\nresource: {resource}\n---\n");
 
                 let prefix = format!("{}.", &State::Original.marker());
                 for entry in archive.entries()? {
