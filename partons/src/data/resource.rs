@@ -19,7 +19,7 @@ impl Display for Data {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Clone)]
 pub(crate) enum State {
     Regular,
     Original,
@@ -49,8 +49,8 @@ pub(crate) struct Resource {
 
 impl Display for Resource {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let data = self.data;
-        let state = self.state;
+        let data = self.data.clone();
+        let state = self.state.clone();
         write!(f, "{state} {data}")
     }
 }

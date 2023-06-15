@@ -6,7 +6,7 @@ use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
-use crate::data::source::ConversionError::{self, FieldType, MissingField};
+use crate::data::format::ConversionError::{self, FieldType, MissingField};
 use crate::info;
 
 pub struct Info(HashMap<String, Value>);

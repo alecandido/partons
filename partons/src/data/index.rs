@@ -1,14 +1,16 @@
 //! Remote index
-use super::header::Header;
+use std::ops::{self, Deref};
+use std::str::FromStr;
+use std::vec;
 
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use itertools::Itertools;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use std::ops::{self, Deref};
-use std::str::FromStr;
-use std::vec;
+use super::header::Header;
+use super::resource::Data;
+use super::source::Source;
 
 /// Describe content of a remote source.
 #[derive(Serialize, Deserialize, Debug)]
@@ -86,5 +88,36 @@ impl Index {
             1 => Ok(found[0].to_owned()),
             n => bail!("{n} sets found matching {name}"),
         }
+    }
+}
+
+impl Source {
+    /// Fetch the source index.
+    ///
+    /// The index contains the information about the sets available in the remote.
+    ///
+    /// ```
+    /// # use partons::configs::Configs;
+    /// # use partons::data::index::Index;
+    /// # use anyhow::Result;
+    /// # use std::env;
+    /// #
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// #     let mut path = env::current_dir()?;
+    /// #     path.push("../partons.toml");
+    ///       let configs = Configs::new(path)?;
+    ///       let mut source = configs.sources[0].clone();
+    ///       source.register_cache(configs.data_path()?);
+    ///       let index: Index = source.index().await?;
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub async fn index(&self) -> Result<Index> {
+        let content = self.fetch(&self.index, Data::Index).await?;
+
+        std::str::from_utf8(&content)?
+            .parse::<Index>()
+            .map_err(|_| anyhow!("Failed to parse index"))
     }
 }

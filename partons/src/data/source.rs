@@ -4,15 +4,11 @@ use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use tokio::runtime::Runtime;
 
 use super::cache::file::Cache;
-use super::header::Header;
-use super::index::Index;
-use super::lhapdf;
+use super::format::Format;
 use super::resource::{Data, Resource, State};
-use crate::info::Info;
 
 const NAME_PLACEHOLDER: &str = "{name}";
 
@@ -31,42 +27,6 @@ impl Default for Patterns {
     }
 }
 
-/// Error during data conversion
-#[derive(Error, Debug)]
-pub enum ConversionError {
-    /// Missing field from original value
-    #[error("Missing field {0}")]
-    MissingField(String),
-    /// Type mismatched
-    #[error("Missing field {0}")]
-    FieldType(String),
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "kebab-case")]
-pub(crate) enum Format {
-    Native,
-    Lhapdf,
-}
-
-impl Default for Format {
-    fn default() -> Self {
-        Format::Native
-    }
-}
-
-impl Format {
-    fn convert(&self, content: Bytes, resource: &Resource) -> Result<Bytes> {
-        match self {
-            Self::Native => {
-                // TODO: move the content from original to new
-                Ok(content)
-            }
-            Self::Lhapdf => lhapdf::convert(content, resource),
-        }
-    }
-}
-
 /// A remote registry.
 ///
 /// It contains the information to connect to a remote data source, and the methods to fetch and
@@ -75,7 +35,7 @@ impl Format {
 pub struct Source {
     pub(crate) name: String,
     url: String,
-    index: String,
+    pub(crate) index: String,
     #[serde(default)]
     format: Format,
     #[serde(default)]
@@ -122,18 +82,17 @@ impl Source {
         self.cache.as_ref().ok_or(anyhow!("Cache not registered."))
     }
 
-    fn runtime(&self) -> &Runtime {
-        match self.runtime {
-            Some(runtime) => &runtime,
-            None => {
-                let runtime = tokio::runtime::Builder::new_current_thread()
+    pub(crate) fn runtime(&mut self) -> &Runtime {
+        if let None = self.runtime {
+            self.runtime = Some(
+                tokio::runtime::Builder::new_current_thread()
                     .enable_all()
                     .build()
-                    .unwrap();
-                self.runtime = Some(runtime);
-                &runtime
-            }
+                    .unwrap(),
+            );
         }
+
+        self.runtime.as_ref().unwrap()
     }
 
     // Download whatever remote resources to raw bytes
@@ -159,11 +118,11 @@ impl Source {
             cache.read(&resource)?
         };
 
-        self.format.convert(content, &resource)
+        self.format.convert(content, &resource.data)
     }
 
     // Download whatever remote resources to raw bytes
-    async fn fetch(&self, url: &str, data: Data) -> Result<Bytes> {
+    pub(crate) async fn fetch(&self, url: &str, data: Data) -> Result<Bytes> {
         // TODO: turn prints in logs
         println!("Fetching content from {url}");
         let cache = self.cache()?;
@@ -187,41 +146,12 @@ impl Source {
         Ok(content)
     }
 
-    /// Fetch the source index.
-    ///
-    /// The index contains the information about the sets available in the remote.
-    ///
-    /// ```
-    /// # use partons::configs::Configs;
-    /// # use partons::data::index::Index;
-    /// # use anyhow::Result;
-    /// # use std::env;
-    /// #
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<()> {
-    /// #     let mut path = env::current_dir()?;
-    /// #     path.push("../partons.toml");
-    ///       let configs = Configs::new(path)?;
-    ///       let mut source = configs.sources[0].clone();
-    ///       source.register_cache(configs.data_path()?);
-    ///       let index: Index = source.index().await?;
-    /// #     Ok(())
-    /// # }
-    /// ```
-    pub async fn index(&self) -> Result<Index> {
-        let content = self.fetch(&self.index, Data::Index).await?;
-
-        std::str::from_utf8(&content)?
-            .parse::<Index>()
-            .map_err(|_| anyhow!("Failed to parse index"))
-    }
-
     fn url(&self, path: &str) -> String {
         format!("{endpoint}{path}", endpoint = self.url).to_owned()
     }
 
     /// `remote` is the URL path on the remote source.
-    async fn load(&self, remote: &Path, data: Data) -> Result<Bytes> {
+    pub(crate) async fn load(&self, remote: &Path, data: Data) -> Result<Bytes> {
         let url = self.url(
             remote
                 .to_str()
@@ -230,53 +160,7 @@ impl Source {
         self.fetch(&url, data).await
     }
 
-    fn replace_name(pattern: &str, name: &str) -> PathBuf {
+    pub(crate) fn replace_name(pattern: &str, name: &str) -> PathBuf {
         PathBuf::from(pattern.replace(NAME_PLACEHOLDER, name))
-    }
-
-    /// Fetch set metadata.
-    ///
-    /// ```
-    /// # use partons::configs::Configs;
-    /// # use partons::info::Info;
-    /// # use anyhow::Result;
-    /// # use std::env;
-    /// #
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<()> {
-    /// #     let mut path = env::current_dir()?;
-    /// #     path.push("../partons.toml");
-    ///       let configs = Configs::new(path)?;
-    ///       let mut source = configs.sources[0].clone();
-    ///       source.register_cache(configs.data_path()?);
-    ///       let index = source.index().await?;
-    ///       let entry = index.get("NNPDF40_nnlo_as_01180")?;
-    ///       let info: Info = source.info(&entry).await?;
-    /// #     Ok(())
-    /// # }
-    /// ```
-    pub async fn info(&self, header: &Header) -> Result<Info> {
-        let remote = Self::replace_name(&self.patterns.info, &header.name);
-        let content = self
-            .load(remote.as_path(), Data::Info(header.name.to_owned()))
-            .await?;
-
-        Info::load(content).map_err(|err| {
-            anyhow!(
-                "Failed to parse info file for {}:\n\t{:?}",
-                header.identifier(),
-                err
-            )
-        })
-    }
-
-    /// Fetch set member.
-    pub async fn set(&self, header: &Header) -> Result<()> {
-        let remote = Self::replace_name(&self.patterns.grids, &header.name);
-
-        self.load(remote.as_path(), Data::Set(header.name.to_owned()))
-            .await?;
-
-        Ok(())
     }
 }

@@ -5,7 +5,7 @@ use bytes::Bytes;
 use ndarray::{Array1, Array3};
 
 use crate::block::Block;
-use crate::data::source::ConversionError;
+use crate::data::format::ConversionError;
 use crate::member::Member;
 
 pub(crate) struct Grid {
