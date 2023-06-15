@@ -1,5 +1,6 @@
 //! A filesystem-based cache.
 use std::fs;
+use std::io::Read;
 use std::path::PathBuf;
 
 use anyhow::bail;
@@ -14,10 +15,10 @@ use super::super::{
 };
 
 const INDEX_NAME: &str = "index.csv";
-const INFO_NAME: &str = "info.yaml";
+pub(crate) const INFO_NAME: &str = "info.yaml";
 const SET_NAME: &str = "set.tar.gz";
-const MEMBER_PLACEHOLDER: &str = "{member}";
-const MEMBER_PATTERN: &str = "{member}.member.lz4";
+pub(crate) const MEMBER_PLACEHOLDER: &str = "{member}";
+pub(crate) const MEMBER_PATTERN: &str = "{member}.member.lz4";
 
 /// Cache fetched datas.
 ///
@@ -130,16 +131,29 @@ impl Cache {
                 let content = fs::read(&location)?;
                 let tar = GzDecoder::new(&content[..]);
                 let mut archive = Archive::new(tar);
-
-                // if archive.entries()?.count() == 1 {
-                // let Some(element) = archive.entries()?.next() else { todo!() };
-                // element?.header();
-                // }
-
                 if !location.pop() {
                     bail!("Parent not available");
                 };
-                archive.unpack(&location).unwrap();
+                println!("\n---\nresource: {resource}\n---\n");
+
+                let prefix = format!("{}.", &State::Original.marker());
+                for entry in archive.entries()? {
+                    let mut en = entry?;
+                    let inner_path = en.path()?.into_owned();
+                    let mut buf = Vec::new();
+                    let read = en.read_to_end(&mut buf)?;
+                    let bytes = Bytes::copy_from_slice(&buf);
+
+                    if read > 0 {
+                        let file_name = format.convert_name(inner_path)?;
+                        let mut path = location.clone();
+                        path.push(&(prefix.clone() + &file_name));
+
+                        fs::create_dir_all(path.parent().unwrap())?;
+                        fs::write(path, bytes)?;
+                    }
+                }
+
                 Ok(Bytes::new())
             }
             _ => Ok(content),

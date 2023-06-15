@@ -1,4 +1,6 @@
-use anyhow::Result;
+use std::path::PathBuf;
+
+use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -39,6 +41,18 @@ impl Format {
                 Ok(content)
             }
             Self::Lhapdf => lhapdf::convert(content, data),
+        }
+    }
+
+    pub(crate) fn convert_name(&self, path: PathBuf) -> Result<String> {
+        match self {
+            Self::Native => path
+                .file_name()
+                .map(|s| s.to_str())
+                .flatten()
+                .map(|s| s.to_owned())
+                .ok_or(anyhow!("...")),
+            Self::Lhapdf => lhapdf::convert_name(path),
         }
     }
 }

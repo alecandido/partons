@@ -828,6 +828,7 @@ dependencies = [
  "directories",
  "flate2",
  "itertools",
+ "lazy_static",
  "ndarray",
  "regex",
  "reqwest",
