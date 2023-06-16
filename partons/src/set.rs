@@ -10,12 +10,13 @@ use crate::{
     member::Member,
 };
 
+#[derive(Debug)]
 /// Partons set.
 pub struct Set {
-    source: Source,
-    header: Header,
-    info: Option<Info>,
-    members: HashMap<u32, Member>,
+    pub(crate) source: Source,
+    pub(crate) header: Header,
+    pub(crate) info: Option<Info>,
+    pub(crate) members: HashMap<u32, Member>,
 }
 
 impl Set {
@@ -32,18 +33,18 @@ impl Set {
     }
 
     /// Metadata.
-    pub fn info(&mut self) -> Result<&Info> {
+    pub async fn info(&mut self) -> Result<&Info> {
         if let None = self.info {
-            self.info = Some(Info::fetch(&mut self.source, &self.header)?);
+            self.info = Some(self.source.info(&self.header).await?);
         };
 
         self.info.as_ref().ok_or(anyhow!("..."))
     }
 
     /// Retrieve a set member.
-    pub fn member(&mut self, num: u32) -> Result<&Member> {
+    pub async fn member(&mut self, num: u32) -> Result<&Member> {
         if let None = self.members.get(&num) {
-            let member = Member::fetch(&mut self.source, &self.header, num)?;
+            let member = self.source.member(&self.header, num).await?;
             self.members.insert(num, member);
         }
 

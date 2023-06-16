@@ -11,10 +11,13 @@ async fn main() -> Result<()> {
     let index = source.index().await?;
 
     // display the first element, if non-empty
-    for set in ["NNPDF40_nnlo_as_01180", "MSHT20nnlo_as118", "CT18NNLO"] {
+    for set in ["NNPDF40_nnlo_as_01180"] {
+        //, "MSHT20nnlo_as118", "CT18NNLO"] {
         let header = index.get(set)?;
-        let set = source.set(&header).await?;
+        let mut set = source.set(&header).await?;
         println!("{set:#?}");
+        let grid0 = set.member(0).await?;
+        println!("{grid0:#?}");
     }
 
     Ok(())

@@ -45,6 +45,7 @@ impl Source {
 
 impl Info {
     /// Fetch info synchronously.
+    // TODO: https://stackoverflow.com/a/68833681/8653979
     pub fn fetch(source: &Source, header: &Header) -> Result<Self> {
         runtime().block_on(source.info(header))
     }

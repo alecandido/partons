@@ -1,5 +1,7 @@
 //! Member of a set
 
+use std::collections::HashMap;
+
 use anyhow::{bail, Result};
 use bincode::{Decode, Encode};
 use bytes::Bytes;
@@ -14,6 +16,7 @@ use crate::block::Block;
 /// [`Block`](crate::block::Block)s and further optional metadata.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Member {
+    pub(crate) metadata: HashMap<String, String>,
     pub(crate) blocks: Vec<Block>,
 }
 
