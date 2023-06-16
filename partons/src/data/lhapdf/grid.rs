@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use anyhow::{bail, Result};
 use bytes::Bytes;
-use ndarray::{Array1, Array3};
+use ndarray::{Array1, Array2, Array3};
 
 use crate::block::Block;
 use crate::data::format::ConversionError;
@@ -30,24 +30,43 @@ impl Grid {
         <T as FromStr>::Err: Debug,
     {
         if let Some(text) = line {
-            let nums: Vec<T> = text
+            let nums = text
                 .trim()
                 .split(" ")
                 .into_iter()
                 .map(|v| str::parse(v).unwrap())
                 .collect();
-            Ok(Array1::from(nums))
+            Ok(Array1::from_vec(nums))
         } else {
             bail!("");
         }
     }
 
-    fn table(lines: Option<&str>) -> Result<Array3<f64>> {
-        if let Some(_text) = lines {
-            todo!()
+    fn table(lines: Option<&str>) -> Result<Array2<f64>> {
+        if let Some(text) = lines {
+            let mut rows = Vec::new();
+            for line in text.lines() {
+                let nums: Vec<f64> = line
+                    .trim()
+                    .split(" ")
+                    .filter(|v| v.len() > 0)
+                    .into_iter()
+                    .map(|v| str::parse(v).unwrap())
+                    .collect();
+                rows.push(nums);
+            }
+            let shape = (rows.len(), rows[0].len());
+            let values = rows.concat();
+            Ok(Array2::from_shape_vec(shape, values)?)
         } else {
             bail!("")
-        };
+        }
+    }
+
+    fn values(values: Array2<f64>, xs: usize) -> Result<Array3<f64>> {
+        let &[points, pids] = values.shape() else { bail!("") };
+        let mu2s = points / xs;
+        Ok(values.into_shape((xs, mu2s, pids))?)
     }
 
     fn block(section: &str) -> Result<Block> {
@@ -56,9 +75,8 @@ impl Grid {
         let xgrid = Self::sequence(split.next())?;
         let mu2grid = Self::sequence(split.next())?;
         let pids = Self::sequence(split.next())?;
-        println!("{xgrid:?}\n{mu2grid:?}\n{pids:?}");
 
-        let values = Self::table(split.next())?;
+        let values = Self::values(Self::table(split.next())?, xgrid.len())?;
 
         Ok(Block::new(pids, xgrid, mu2grid, values))
     }
