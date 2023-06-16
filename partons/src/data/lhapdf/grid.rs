@@ -66,7 +66,13 @@ impl Grid {
     fn values(values: Array2<f64>, xs: usize) -> Result<Array3<f64>> {
         let &[points, pids] = values.shape() else { bail!("") };
         let mu2s = points / xs;
-        Ok(values.into_shape((xs, mu2s, pids))?)
+        let lha_shaped = values.into_shape((xs, mu2s, pids))?;
+        // TODO: solve the following horrible memory duplication, and horrible loop
+        let mut native_shaped = Array3::zeros((pids, xs, mu2s));
+        for ((x, mu, p), val) in lha_shaped.indexed_iter() {
+            native_shaped[(p, x, mu)] = *val;
+        }
+        Ok(native_shaped)
     }
 
     fn block(section: &str) -> Result<Block> {

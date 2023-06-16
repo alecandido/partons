@@ -10,7 +10,7 @@ pub struct Block {
     pub pids: Array1<i32>,
     pub xgrid: Array1<f64>,
     pub mu2grid: Array1<f64>,
-    values: Array3<f64>,
+    pub(crate) values: Array3<f64>,
     pid_map: HashMap<i32, usize>,
 }
 
@@ -21,7 +21,7 @@ impl Block {
         mu2grid: Array1<f64>,
         values: Array3<f64>,
     ) -> Self {
-        assert_eq!(values.shape(), &[xgrid.len(), mu2grid.len(), pids.len()]);
+        assert_eq!(values.shape(), &[pids.len(), xgrid.len(), mu2grid.len()]);
 
         let pid_map = pids.iter().enumerate().map(|(i, v)| (*v, i)).collect();
 
