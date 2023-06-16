@@ -1,5 +1,8 @@
 //! Parse legacy LHAPDF member files
 
+use std::fmt::Debug;
+use std::str::FromStr;
+
 use anyhow::{bail, Result};
 use bytes::Bytes;
 use ndarray::{Array1, Array3};
@@ -22,12 +25,21 @@ impl Grid {
         }
     }
 
-    fn sequence<T>(line: Option<&str>) -> Result<Array1<T>> {
-        if let Some(_text) = line {
-            todo!()
+    fn sequence<T: FromStr>(line: Option<&str>) -> Result<Array1<T>>
+    where
+        <T as FromStr>::Err: Debug,
+    {
+        if let Some(text) = line {
+            let nums: Vec<T> = text
+                .trim()
+                .split(" ")
+                .into_iter()
+                .map(|v| str::parse(v).unwrap())
+                .collect();
+            Ok(Array1::from(nums))
         } else {
-            bail!("")
-        };
+            bail!("");
+        }
     }
 
     fn table(lines: Option<&str>) -> Result<Array3<f64>> {
@@ -39,11 +51,12 @@ impl Grid {
     }
 
     fn block(section: &str) -> Result<Block> {
-        let mut split = section.splitn(3, '\n');
+        let mut split = section.trim().splitn(4, '\n');
 
         let xgrid = Self::sequence(split.next())?;
         let mu2grid = Self::sequence(split.next())?;
         let pids = Self::sequence(split.next())?;
+        println!("{xgrid:?}\n{mu2grid:?}\n{pids:?}");
 
         let values = Self::table(split.next())?;
 
