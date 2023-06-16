@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
         let mut set = source.set(&header).await?;
         println!("{set:#?}");
         let grid0 = set.member(0).await?;
-        println!("{grid0:#?}");
+        println!("{grid0}");
     }
 
     Ok(())

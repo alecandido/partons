@@ -1,6 +1,7 @@
 //! Member of a set
 
 use std::collections::HashMap;
+use std::fmt::{self, Display};
 
 use anyhow::{bail, Result};
 use bincode::{Decode, Encode};
@@ -51,5 +52,40 @@ impl Member {
         values[0] = self.blocks[(nf[0] - 3) as usize].interp(pid[0], x[0], mu2[0])?;
 
         Ok(values)
+    }
+}
+
+impl Display for Member {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn beautify<T: Serialize>(map: &T) -> String {
+            let metadata = serde_yaml::to_string(map).unwrap().replace('\n', "\n    ");
+            let metadata = metadata.trim();
+            metadata.to_owned()
+        }
+
+        let metadata = beautify(&self.metadata);
+        let shapes: Vec<_> = self
+            .blocks
+            .iter()
+            .map(|b| {
+                let v: HashMap<&str, usize> = ["pids", "xs", "mu2s"]
+                    .iter()
+                    .zip(b.values.shape())
+                    .map(|(s, l)| (s.to_owned(), l.clone()))
+                    .collect();
+                v
+            })
+            .collect();
+        let shapes = beautify(&shapes);
+        write!(
+            f,
+            "
+Member(
+    ---
+    {metadata}
+    ---
+    {shapes}
+)"
+        )
     }
 }
