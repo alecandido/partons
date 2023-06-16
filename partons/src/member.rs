@@ -10,13 +10,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::block::Block;
 
+pub(crate) type Metadata = HashMap<String, String>;
+
 /// Member of a set
 ///
 /// This contains the whole member data, including the interpolation
 /// [`Block`](crate::block::Block)s and further optional metadata.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Member {
-    pub(crate) metadata: HashMap<String, String>,
+    pub(crate) metadata: Metadata,
     pub(crate) blocks: Vec<Block>,
 }
 
