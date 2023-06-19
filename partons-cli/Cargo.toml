@@ -1,0 +1,25 @@
+[package]
+authors = ["Alessandro Candido <candido.ale@gmail.com>"]
+description = "Manage partons data."
+name = "partons-cli"
+readme = "../README.md"
+
+categories.workspace = true
+edition.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+
+[dependencies]
+anyhow = "1.0.71"
+clap = { version = "4.3.3", features = ["derive", "cargo"] }
+partons = { path = "../partons", version = "0.0.1" }
+serde_json = "1.0.96"
+
+
+[[bin]]
+name = "partons"
+path = "src/main.rs"

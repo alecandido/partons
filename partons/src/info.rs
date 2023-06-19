@@ -1,77 +1,112 @@
+//! Store metadata of a set
+
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
+use anyhow::Result;
+use bytes::Bytes;
+use serde::{
+    de::{self, Visitor},
+    Deserialize, Serialize,
+};
+use serde_yaml::Value;
 
-// This should be i32, but unfortunately it is not honored by all sets:
-// https://lhapdfsets.web.cern.ch/current/JAM20-SIDIS_FF_hadron_nlo/JAM20-SIDIS_FF_hadron_nlo.info
-pub type PID = String;
+/// Particle ID
+pub type PID = i64;
 
+/// Set metadata
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Info {
-    #[serde(rename = "SetDesc")]
-    set_desc: String,
-    #[serde(rename = "SetIndex")]
-    set_index: u32,
-    #[serde(rename = "Authors")]
-    authors: String, // TODO: replace with sequence of strings
-    #[serde(default, rename = "Reference")]
-    reference: Option<String>,
-    #[serde(default, rename = "Format")]
-    format: Option<String>, // TODO: replace with enum
-    #[serde(rename = "DataVersion")]
-    data_version: u32,
-    #[serde(rename = "NumMembers")]
-    num_members: u32,
-    #[serde(default, rename = "Particle")]
-    particle: Option<PID>,
-    #[serde(rename = "Flavors")]
-    flavors: Vec<PID>,
-    #[serde(default, rename = "OrderQCD")]
-    order_qcd: Option<u32>,
-    #[serde(rename = "FlavorScheme")]
-    flavor_scheme: String, // TODO: replace with enum
-    #[serde(default, rename = "NumFlavors")]
-    num_flavors: Option<u32>,
-    #[serde(default, rename = "ErrorType")]
-    error_type: Option<String>, // TODO: replace with enum
-    #[serde(rename = "XMin")]
-    x_min: f64,
-    #[serde(rename = "XMax")]
-    x_max: f64,
-    #[serde(rename = "QMin")]
-    q_min: f64,
-    #[serde(rename = "QMax")]
-    q_max: f64,
-    #[serde(default, rename = "MZ")]
-    mz: Option<f64>,
-    #[serde(default, rename = "MUp")]
-    m_up: Option<f64>,
-    #[serde(default, rename = "MDown")]
-    m_down: Option<f64>,
-    #[serde(default, rename = "MStrange")]
-    m_strange: Option<f64>,
-    #[serde(default, rename = "MCharm")]
-    m_charm: Option<f64>,
-    #[serde(default, rename = "MBottom")]
-    m_bottom: Option<f64>,
-    #[serde(default, rename = "MTop")]
-    m_top: Option<f64>,
-    #[serde(default, rename = "AlphaS_MZ")]
-    alpha_s_mz: Option<f64>,
-    #[serde(default, rename = "AlphaS_OrderQCD")]
-    alpha_s_order_qcd: Option<u32>,
-    #[serde(default, rename = "AlphaS_Type")]
-    alpha_s_type: Option<String>, // TODO: replace with enum
-    #[serde(default, rename = "AlphaS_Qs")]
-    alpha_s_qs: Option<Vec<f64>>,
-    #[serde(default, rename = "AlphaS_Vals")]
-    alpha_s_vals: Option<Vec<f64>>,
-    #[serde(default, rename = "AlphaS_Lambda4")]
-    alpha_s_lambda4: Option<f64>,
-    #[serde(default, rename = "AlphaS_Lambda5")]
-    alpha_s_lambda5: Option<f64>,
-    #[serde(default, rename = "Extrapolator")]
-    extrapolator: Option<String>, // TODO: replace with enum
-    #[serde(default)]
-    _more: HashMap<String, String>,
+    /// Numerical identifier, within the source
+    pub id: Option<u64>,
+    /// Unstructured description
+    pub description: String,
+    /// List of authors
+    pub authors: String,
+    /// Fitting year
+    pub year: Option<u64>,
+    /// A reference to the paper that describes this set
+    pub reference: Option<String>,
+    /// The Monte Carlo particle ID for the parent particle
+    pub particle: Option<PID>,
+    /// Perturbative order
+    pub order: (u64, u64),
+    ///
+    pub error_type: Option<String>,
+    ///
+    pub data_version: Option<i64>,
+    ///
+    pub note: Option<String>,
+    /// Extra information to keep
+    ///
+    /// This field is here to store, mainly, legacy fields, that should be kept, but
+    /// TODO: find a better name, for the time being I'm using PineAPPL's one
+    pub more_members: HashMap<String, Value>,
+}
+
+impl Info {
+    pub(crate) fn load(bytes: Bytes) -> Result<Self> {
+        Ok(serde_yaml::from_slice(&bytes)?)
+    }
+}
+
+/// A set author
+pub struct Author {
+    name: String,
+    address: String,
+}
+
+impl Serialize for Author {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let name = &self.name;
+        let address = &self.address;
+        serializer.serialize_str(&format!("{name} <{address}>"))
+    }
+}
+
+impl<'de> Deserialize<'de> for Author {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Name,
+            Address,
+        }
+
+        struct AuthorVisitor;
+
+        impl<'de> Visitor<'de> for AuthorVisitor {
+            type Value = Author;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("author representation 'Whatever Name <email@address.net>'")
+            }
+
+            fn visit_str<E>(self, string: &str) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                let elems: Vec<&str> = string.split(&['<', '>']).collect();
+                let mut it = elems.iter();
+                let mut trim_next = |pos| {
+                    Ok(it
+                        .next()
+                        .ok_or_else(|| de::Error::invalid_length(pos, &self))?
+                        .trim()
+                        .to_owned())
+                };
+                let name = trim_next(0)?;
+                let address = trim_next(1)?;
+                Ok(Author { name, address })
+            }
+        }
+
+        const FIELDS: &'static [&'static str] = &["name", "address"];
+        deserializer.deserialize_struct("Author", FIELDS, AuthorVisitor)
+    }
 }

@@ -1,5 +1,5 @@
 [workspace]
-members = ["partons", "partons_py"]
+members = ["partons", "partons-cli", "partons-py"]
 
 [workspace.package]
 categories = ["science"]

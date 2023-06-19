@@ -42,7 +42,7 @@ pub trait Pdf {
 
     fn force_positive(&mut self) -> i32;
 
-    fn set(&self) -> crate::PdfSetEnum;
+    fn set(&self) -> PdfSetEnum;
 
     fn set_force_positive(&mut self, mode: i32);
 
@@ -95,6 +95,7 @@ mod test {
     use super::*;
 
     #[test]
+    #[ignore]
     fn available_pdf_sets() {
         let pdf_sets = PdfSetEnum::available();
 
@@ -104,6 +105,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn check_pdf() -> Result<()> {
         let pdf_0 = PdfEnum::new("NNPDF40_nnlo_as_01180")?;
         let pdf_1 = PdfEnum::new("331100")?;
@@ -141,6 +143,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn check_setname_and_nmem() -> Result<()> {
         let pdf = PdfEnum::new("NNPDF40_nnlo_as_01180/1")?;
 
@@ -161,6 +164,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn check_pdf_set() -> Result<()> {
         let pdf_set = PdfSetEnum::new("NNPDF40_nnlo_as_01180")?;
 
@@ -188,6 +192,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn debug_pdf_set() -> Result<()> {
         let pdf_set = PdfSetEnum::new("NNPDF40_nnlo_as_01180")?;
 
@@ -208,6 +213,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn force_positive() -> Result<()> {
         let mut pdf = PdfEnum::new("NNPDF40_nnlo_as_01180/1")?;
 

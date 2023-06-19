@@ -1,93 +1,57 @@
-use std::fs;
-use std::path::{Path, PathBuf};
+//! Partons set
+
+use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
-use bytes::Bytes;
-use serde::{Deserialize, Serialize};
 
 use crate::{
+    data::{header::Header, source::Source},
     info::Info,
-    member::Grid,
-    remote::{Patterns, Source},
+    member::Member,
 };
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Header<'head> {
-    id: u32,
-    name: String,
-    number: u32,
-    #[serde(skip)]
-    source: Option<&'head Source>,
+#[derive(Debug)]
+/// Partons set.
+pub struct Set {
+    pub(crate) source: Source,
+    pub(crate) header: Header,
+    pub(crate) info: Option<Info>,
+    pub(crate) members: HashMap<u32, Member>,
 }
 
-const NAME_PLACEHOLDER: &str = "{name}";
+impl Set {
+    /// Set name.
+    ///
+    /// Usually unique enough to identify the set within a source.
+    pub fn name(&self) -> String {
+        self.header.name.to_owned()
+    }
 
-impl<'head> Header<'head> {
-    pub fn new(id: u32, name: String, number: u32) -> Self {
-        Self {
-            id,
-            name,
-            number,
-            source: None,
+    /// Original source from which the data have been fetched.
+    pub fn source(&self) -> String {
+        self.source.name.clone()
+    }
+
+    /// Metadata.
+    pub async fn info(&mut self) -> Result<&Info> {
+        if let None = self.info {
+            self.info = Some(self.source.info(&self.header).await?);
+        };
+
+        self.info.as_ref().ok_or(anyhow!("..."))
+    }
+
+    /// Retrieve a set member.
+    pub async fn member(&mut self, num: u32) -> Result<&Member> {
+        if let None = self.members.get(&num) {
+            let member = self.source.member(&self.header, num).await?;
+            self.members.insert(num, member);
         }
-    }
 
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn identifier(&self) -> String {
-        format!("{}:'{}'", self.name, self.id)
-    }
-
-    pub fn source(&self) -> Result<&Source> {
-        self.source.ok_or(anyhow!(""))
-    }
-
-    pub fn patterns(&self) -> Result<&Patterns> {
-        Ok(&self.source()?.patterns)
-    }
-
-    pub async fn load(&self, remote: &Path, local: &Path, cache: Option<&Path>) -> Result<Bytes> {
-        let source = self.source()?;
-        let url = source.url(
-            remote
-                .to_str()
-                .ok_or(anyhow!("Invalid remote path in {}", self.identifier()))?,
-        );
-        let location = source.fetch(&url, local, cache).await?;
-
-        Ok(fs::read(&location)?.into())
-    }
-
-    pub async fn info(&self, cache: Option<&Path>) -> Result<Info> {
-        let pattern = &self.patterns()?.info;
-        let path = PathBuf::from(pattern.replace(NAME_PLACEHOLDER, &self.name));
-        let content = self.load(path.as_path(), path.as_path(), cache).await?;
-
-        serde_yaml::from_slice(&content).map_err(|err| {
-            anyhow!(
-                "Failed to parse info file for {}:\n\t{:?}",
-                self.identifier(),
-                err
-            )
-        })
-    }
-
-    pub async fn grid(&self, member: u32, cache: Option<&Path>) -> Result<Grid> {
-        let pattern = &self.patterns()?.grids;
-        let remote = PathBuf::from(pattern.replace(NAME_PLACEHOLDER, &self.name));
-        let mut local = PathBuf::from(&self.name);
-        local.push(format!("{}.member.lz4", member));
-
-        let content = self.load(local.as_path(), remote.as_path(), cache).await?;
-
-        serde_yaml::from_slice(&content).map_err(|err| {
-            anyhow!(
-                "Failed to parse grid file for {}:\n\t{:?}",
-                self.identifier(),
-                err
-            )
-        })
+        // TODO: I have to call twice get in any case, because if I hold the reference to the first
+        // returned value, I can no longer mutate self.members, and even if I return it, the borrow
+        // checker believes I still have the borrow (this shouldn't be lexical lifetimes in action,
+        // since I'm developing on Rust 1.70.0, but then I don't know why...)
+        Ok(&self.members.get(&num).unwrap())
     }
 }
