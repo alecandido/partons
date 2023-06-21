@@ -1,8 +1,6 @@
 use anyhow::Result;
 use partons::configs::Configs;
-use tokio::task::JoinSet;
 
-#[tokio::main]
 async fn main() -> Result<()> {
     let cfg = Configs::load()?;
 

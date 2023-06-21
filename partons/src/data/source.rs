@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Runtime;
 
 use super::cache::file::Cache;
 use super::format::Format;
@@ -148,12 +147,4 @@ impl Source {
     pub(crate) fn replace_name(pattern: &str, name: &str) -> PathBuf {
         PathBuf::from(pattern.replace(NAME_PLACEHOLDER, name))
     }
-}
-
-// TODO: assign this to some structure in order not to lose it every time
-pub(crate) fn runtime() -> Runtime {
-    tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap()
 }

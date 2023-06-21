@@ -102,7 +102,6 @@ impl Source {
     /// # use anyhow::Result;
     /// # use std::env;
     /// #
-    /// # #[tokio::main]
     /// # async fn main() -> Result<()> {
     /// #     let mut path = env::current_dir()?;
     /// #     path.push("../partons.toml");

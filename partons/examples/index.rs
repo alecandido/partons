@@ -2,7 +2,6 @@
 use anyhow::Result;
 use partons::configs::Configs;
 
-#[tokio::main]
 async fn main() -> Result<()> {
     let cfg = Configs::load()?;
 
