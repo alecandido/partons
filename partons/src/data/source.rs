@@ -81,7 +81,7 @@ impl Source {
 
     // Download whatever remote resources to raw bytes
     fn download(url: &str) -> Result<Bytes> {
-        Ok(reqwest::get(url)?.bytes()?)
+        Ok(reqwest::blocking::get(url)?.bytes()?)
     }
 
     fn converted(&self, url: &str, data: Data) -> Result<Bytes> {
