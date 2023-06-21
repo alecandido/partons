@@ -2,7 +2,7 @@
 use anyhow::Result;
 use partons::configs::Configs;
 
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     let cfg = Configs::load()?;
 
     // display the configs content
@@ -10,7 +10,7 @@ async fn main() -> Result<()> {
 
     let mut source = cfg.sources[0].clone();
     source.register_cache(cfg.data_path()?);
-    let index = source.index().await?;
+    let index = source.index()?;
 
     // display the first element, if non-empty
     if index.len() > 0 {

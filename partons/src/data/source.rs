@@ -80,11 +80,11 @@ impl Source {
     }
 
     // Download whatever remote resources to raw bytes
-    async fn download(url: &str) -> Result<Bytes> {
-        Ok(reqwest::get(url).await?.bytes().await?)
+    fn download(url: &str) -> Result<Bytes> {
+        Ok(reqwest::get(url)?.bytes()?)
     }
 
-    async fn converted(&self, url: &str, data: Data) -> Result<Bytes> {
+    fn converted(&self, url: &str, data: Data) -> Result<Bytes> {
         let resource = Resource {
             data,
             state: State::Original,
@@ -92,7 +92,7 @@ impl Source {
         let cache = self.cache()?;
 
         let content = if !cache.exists(&resource) {
-            let content = Self::download(url).await?;
+            let content = Self::download(url)?;
             // cache the raw contnet
             cache.write(&resource, &content)?;
 
@@ -106,7 +106,7 @@ impl Source {
     }
 
     // Download whatever remote resources to raw bytes
-    pub(crate) async fn fetch(&self, url: &str, data: Data) -> Result<Bytes> {
+    pub(crate) fn fetch(&self, url: &str, data: Data) -> Result<Bytes> {
         // TODO: turn prints in logs
         println!("Fetching content from {url}");
         let cache = self.cache()?;
@@ -117,7 +117,7 @@ impl Source {
 
         let content = if !cache.exists(&resource) {
             println!("caching resource '{resource}'");
-            let content = self.converted(url, resource.data.clone()).await?;
+            let content = self.converted(url, resource.data.clone())?;
 
             cache.write(&resource, &content)?;
 
@@ -135,13 +135,13 @@ impl Source {
     }
 
     /// `remote` is the URL path on the remote source.
-    pub(crate) async fn load(&self, remote: &Path, data: Data) -> Result<Bytes> {
+    pub(crate) fn load(&self, remote: &Path, data: Data) -> Result<Bytes> {
         let url = self.url(
             remote
                 .to_str()
                 .ok_or(anyhow!("Invalid remote path {remote:?}"))?,
         );
-        self.fetch(&url, data).await
+        self.fetch(&url, data)
     }
 
     pub(crate) fn replace_name(pattern: &str, name: &str) -> PathBuf {
