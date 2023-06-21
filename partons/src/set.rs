@@ -33,18 +33,18 @@ impl Set {
     }
 
     /// Metadata.
-    pub async fn info(&mut self) -> Result<&Info> {
+    pub fn info(&mut self) -> Result<&Info> {
         if let None = self.info {
-            self.info = Some(self.source.info(&self.header).await?);
+            self.info = Some(self.source.info(&self.header)?);
         };
 
         self.info.as_ref().ok_or(anyhow!("..."))
     }
 
     /// Retrieve a set member.
-    pub async fn member(&mut self, num: u32) -> Result<&Member> {
+    pub fn member(&mut self, num: u32) -> Result<&Member> {
         if let None = self.members.get(&num) {
-            let member = self.source.member(&self.header, num).await?;
+            let member = self.source.member(&self.header, num)?;
             self.members.insert(num, member);
         }
 

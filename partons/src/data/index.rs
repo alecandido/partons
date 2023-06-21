@@ -102,19 +102,18 @@ impl Source {
     /// # use anyhow::Result;
     /// # use std::env;
     /// #
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<()> {
+    /// # fn main() -> Result<()> {
     /// #     let mut path = env::current_dir()?;
     /// #     path.push("../partons.toml");
     ///       let configs = Configs::new(path)?;
     ///       let mut source = configs.sources[0].clone();
     ///       source.register_cache(configs.data_path()?);
-    ///       let index: Index = source.index().await?;
+    ///       let index: Index = source.index()?;
     /// #     Ok(())
     /// # }
     /// ```
-    pub async fn index(&self) -> Result<Index> {
-        let content = self.fetch(&self.index, Data::Index).await?;
+    pub fn index(&self) -> Result<Index> {
+        let content = self.fetch(&self.index, Data::Index)?;
 
         std::str::from_utf8(&content)?
             .parse::<Index>()

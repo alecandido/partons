@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 
 use super::header::Header;
 use super::resource::Data;
-use super::source::{runtime, Source};
+use super::source::Source;
 use crate::info::Info;
 
 impl Source {
@@ -14,24 +14,21 @@ impl Source {
     /// # use anyhow::Result;
     /// # use std::env;
     /// #
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<()> {
+    /// # fn main() -> Result<()> {
     /// #     let mut path = env::current_dir()?;
     /// #     path.push("../partons.toml");
     ///       let configs = Configs::new(path)?;
     ///       let mut source = configs.sources[0].clone();
     ///       source.register_cache(configs.data_path()?);
-    ///       let index = source.index().await?;
+    ///       let index = source.index()?;
     ///       let entry = index.get("NNPDF40_nnlo_as_01180")?;
-    ///       let info: Info = source.info(&entry).await?;
+    ///       let info: Info = source.info(&entry)?;
     /// #     Ok(())
     /// # }
     /// ```
-    pub async fn info(&self, header: &Header) -> Result<Info> {
+    pub fn info(&self, header: &Header) -> Result<Info> {
         let remote = Self::replace_name(&self.patterns.info, &header.name);
-        let content = self
-            .load(remote.as_path(), Data::Info(header.name.to_owned()))
-            .await?;
+        let content = self.load(remote.as_path(), Data::Info(header.name.to_owned()))?;
 
         Info::load(content).map_err(|err| {
             anyhow!(
@@ -40,13 +37,5 @@ impl Source {
                 err
             )
         })
-    }
-}
-
-impl Info {
-    /// Fetch info synchronously.
-    // TODO: https://stackoverflow.com/a/68833681/8653979
-    pub fn fetch(source: &Source, header: &Header) -> Result<Self> {
-        runtime().block_on(source.info(header))
     }
 }
