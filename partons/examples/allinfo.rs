@@ -8,7 +8,6 @@ fn main() -> Result<()> {
     source.register_cache(cfg.data_path()?);
     let index = source.index()?;
 
-    let mut set = JoinSet::new();
     for header in index.into_iter() {
         let source = source.clone();
         let desc = source.info(&header)?;
