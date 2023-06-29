@@ -1,0 +1,42 @@
+name: Python bindings
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: PyO3/maturin-action@v1
+        with:
+          args: --out dist
+
+      - name: Install built wheel
+        run: |
+          pip install partons --no-index --find-links dist --force-reinstall
+
+      - name: Test
+        run: |
+          cd partons-py
+          pytest
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+          files: partons-py/coverage.xml
+          flags: python
