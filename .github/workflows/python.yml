@@ -23,7 +23,7 @@ jobs:
 
       - uses: PyO3/maturin-action@v1
         with:
-          working-directory: quad-py
+          working-directory: partons-py
           args: --out dist
 
       - name: Install built wheel
