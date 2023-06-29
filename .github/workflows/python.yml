@@ -23,11 +23,12 @@ jobs:
 
       - uses: PyO3/maturin-action@v1
         with:
+          working-directory: quad-py
           args: --out dist
 
       - name: Install built wheel
         run: |
-          pip install partons --no-index --find-links dist --force-reinstall
+          pip install 'partons[test]' --find-links partons-py/dist/ --force-reinstall
 
       - name: Test
         run: |
