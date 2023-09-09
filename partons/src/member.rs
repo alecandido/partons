@@ -9,18 +9,18 @@ use bytes::Bytes;
 use ndarray::Array1;
 use serde::{Deserialize, Serialize};
 
-use crate::block::Block;
+use crate::block::Block2;
 
 pub(crate) type Metadata = HashMap<String, String>;
 
 /// Member of a set
 ///
 /// This contains the whole member data, including the interpolation
-/// [`Block`](crate::block::Block)s and further optional metadata.
+/// [blocks](crate::block::Block2) and further optional metadata.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Member {
     pub(crate) metadata: Metadata,
-    pub(crate) blocks: Vec<Block>,
+    pub(crate) blocks: Vec<Block2>,
 }
 
 #[derive(Decode, Encode)]
@@ -49,7 +49,7 @@ impl Member {
         }
 
         let mut values: Array1<f64> = Array1::zeros(x.raw_dim());
-        values[0] = self.blocks[(nf[0] - 3) as usize].interp(pid[0], x[0], mu2[0])?;
+        values[0] = self.blocks[(nf[0] - 3) as usize].interp(x[0], mu2[0])?;
 
         Ok(values)
     }
