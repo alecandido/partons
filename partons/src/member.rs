@@ -2,10 +2,12 @@
 
 use std::collections::HashMap;
 use std::fmt::{self, Display};
+use std::vec;
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 use bincode::{Decode, Encode};
 use bytes::Bytes;
+use itertools::izip;
 use ndarray::Array1;
 use serde::{Deserialize, Serialize};
 
@@ -21,6 +23,7 @@ pub(crate) type Metadata = HashMap<String, String>;
 pub struct Member {
     pub(crate) metadata: Metadata,
     pub(crate) blocks: Vec<Block2>,
+    pub(crate) indices: Vec<Array1<i32>>,
 }
 
 #[derive(Decode, Encode)]
@@ -36,20 +39,34 @@ impl Member {
         Ok(decoded.member)
     }
 
-    /// Return interpolated values
+    fn block_index(&self, pid: i32, nf: u8) -> usize {
+        pid * 4 + (nf - 3)
+    }
+
+    /// Return interpolated values.
+    ///
+    /// The parameters for each value returned are those for the corresponding index in each of the
+    /// input vectors.
+    /// The length of the result is the minimum length of the parameters vectors.
+    ///
+    /// #### Note
+    ///
+    /// A corresponding function for scalar values is not provided, since it can be trivially
+    /// obtained by wrapping them in vectors and unwrapping the result.
+    /// The rational to provide the vector version, rather than the scalar, as primitive is to
+    /// allow potential optimizations for the evaluation of multiple values.
     pub fn evaluate(
         &self,
-        pid: &Array1<i32>,
-        x: &Array1<f64>,
-        mu2: &Array1<f64>,
-        nf: &Array1<u8>,
-    ) -> Result<Array1<f64>> {
-        if x.shape() != mu2.shape() || x.shape() != nf.shape() {
-            bail!("Incompatible array shapes.")
-        }
+        x: &Vec<f64>,
+        mu2: &Vec<f64>,
+        pid: &Vec<i32>,
+        nf: &Vec<u8>,
+    ) -> Result<Vec<f64>> {
+        let mut values = vec![];
 
-        let mut values: Array1<f64> = Array1::zeros(x.raw_dim());
-        values[0] = self.blocks[(nf[0] - 3) as usize].interp(x[0], mu2[0])?;
+        for (y, m, p, n) in izip!(x, mu2, pid, nf) {
+            values.push(self.blocks[self.block_index(*p, *n)].interp(*y, *m)?);
+        }
 
         Ok(values)
     }

@@ -9,6 +9,19 @@ pub struct Block1 {
     pub(crate) values: Array1<f64>,
 }
 
+impl Block1 {
+    pub(crate) fn new(coords: Array1<f64>, values: Array1<f64>) -> Self {
+        assert_eq!(values.shape(), coords.shape());
+
+        Self { coords, values }
+    }
+
+    // TODO: delegate interpolation to ndinterp
+    pub(crate) fn interp(&self, x: f64) -> Result<f64> {
+        return Ok(self.values[[0]]);
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Block2 {
     pub coords: (Array1<f64>, Array1<f64>),

@@ -1,5 +1,6 @@
 // Load configs and download index file
 use anyhow::Result;
+use ndarray::array;
 use partons::configs::Configs;
 
 fn main() -> Result<()> {
@@ -16,7 +17,15 @@ fn main() -> Result<()> {
         let mut set = source.set(&header)?;
         println!("{set:#?}");
         let grid0 = set.member(0)?;
-        println!("{grid0}");
+        let val = grid0
+            .evaluate(
+                &vec![1, 1],
+                &vec![0.1, 0.2],
+                &vec![10., 10.],
+                &vec![4, 4, 5],
+            )
+            .unwrap();
+        println!("{val:?}");
     }
 
     Ok(())
